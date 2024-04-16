@@ -35,3 +35,9 @@
 .vscode/
 mingw32/
 source/
+
+# SDL files
+sdl*
+SDL*
+begin_code.h
+close_code.h
