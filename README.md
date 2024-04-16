@@ -1,6 +1,5 @@
-Informatikos projektinis darbas.
+Informatikos projektinis darbas naudojant SDL2 ir c++.
 
 *"apie ką"*
 
-Naudojame SDL2 ir C++.
 Elina ir Alanas
