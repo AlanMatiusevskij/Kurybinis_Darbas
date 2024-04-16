@@ -9,7 +9,7 @@ Kaip paruošti visus failus:
 1) Atsisiųsti [SDL_template.rar](https://mega.nz/file/y1NSxabT#P6f9sO8f9dAEIzUoyAVKD_EBcK5cvnJOabRx-dmOwc4)
 2) Atsisiųsti [MSYS2](https://github.com/msys2/msys2-installer/releases/download/2024-01-13/msys2-x86_64-20240113.exe), instaliuoti (path | kelio nekeisti) ir ieškoti kompiuteryje "Edit the system environment variables" -> "Environment Variables" -> 'Variable' skiltyje pačiam viršuje rasti "Path" -> Paspausti ir "edit" -> "new" -> įrašyti "C:\msys64\mingw32".
 3) Atsisiųsti [Visual Studio Code](https://code.visualstudio.com/)
-4) Atidaryti vscode ir atsisiųsti extension [GitHub Pull Requests](https://marketplace.visualstudio.com/items?itemName=GitHub.vscode-pull-request-github)
+4) Atidaryti vscode ir atsisiųsti extension [GitHub Pull Requests](https://marketplace.visualstudio.com/items?itemName=GitHub.vscode-pull-request-github) (nepamirškite kitų reikalingų extensions)
 5) Pačiame vscode paspausti ant "Accounts" kairėje apačioje virš nustatymų mygtukų ir prisijungti prie github "Sign in with GitHub to use GitHub pull requests".
 6) Kairėje apačioje spausti "Open a Remote Window" ir "Open Remote Repository", kuriame, po "* GitHub" nerodo jokio vardo.
 7) Kai norite pradėti rašyti **naują** kodą, apačioje kairėje antras mygtukas po "GitHub" su 'main' užrašu paspauskit, pažymėkite "Create new branch", pavadinkite savo vardu ir išmestoje lentelėje spauskit "switch to branch".
