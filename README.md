@@ -15,7 +15,7 @@ Kaip paruošti visus failus:
 7) Kai norite pradėti rašyti **naują** kodą, apačioje kairėje antras mygtukas po "GitHub" su 'main' užrašu paspauskit, pažymėkite "Create new branch", pavadinkite savo vardu ir išmestoje lentelėje spauskit "switch to branch".
 8) Atidarykite terminalą (ctrl + j) ir įrašykite:
    > git clone https://github.com/AlanMatiusevskij/Kurybinis_Darbas.git
-9) Jums turi išsisaugoti aplankas vietoje "C:\Users\jūsų_vardas\Kurybinis_Darbas" (patariu išsisaugoti C:\Users\jūsų_vardas shorcut'ą (ne pačio kurybio_darbo aplanko!). Kairėje viršuje spauskite "file", "open folder" ir "show local".
+9) Jums turi išsisaugoti aplankas vietoje "C:\Users\jūsų_vardas\Kurybinis_Darbas" (patariu išsisaugoti C:\Users\jūsų_vardas shorcut'ą (ne pačio kurybinio_darbo aplanko!). Kairėje viršuje spauskite "file", "open folder" ir "show local".
    Atidarykite Kurybinis_Darbas aplanką. Ten 'extractinkite' SDL_template.rar.
 10) Rašote kodą, jeigu norite, sukurkite .cpp ir .h failus ir t.t.. Kai norite testuoti, į terminalą (ctrl + j) rašykite:
     > mingw32-make
