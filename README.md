@@ -1,6 +1,6 @@
 Informatikos projektinis darbas naudojant SDL2 ir c++.
 
-Muzikos grotuvas, kuris vaizduoja įvairias animacijas - matematines funkcijas ir kitokius dalykus, kurie priklauso nuo grojamo garso. Kokia to prasmė? ¯\\\(ツ)_/¯
+Kompiuterio "draugas" - žmogeliukas bėgiojantis po kompiuterį.
 
 > Elina ir Alanas
 
