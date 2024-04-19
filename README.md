@@ -6,7 +6,7 @@ Kompiuterio "draugas" - žmogeliukas bėgiojantis po kompiuterį.
 
 Kaip paruošti visus failus:
 
-1) Atsisiųsti [SDL_template.rar](https://mega.nz/file/y1NSxabT#P6f9sO8f9dAEIzUoyAVKD_EBcK5cvnJOabRx-dmOwc4)
+1) Atsisiųsti [SDL_template.rar](https://mega.nz/file/C4s0gTba#i0FvQPJ17krVxF2zDfwVAS7QkJHXMqUdDVPUh6A5pIc)
 2) Atsisiųsti [MSYS2](https://github.com/msys2/msys2-installer/releases/download/2024-01-13/msys2-x86_64-20240113.exe), instaliuoti (path | kelio nekeisti) ir ieškoti kompiuteryje "Edit the system environment variables" -> "Environment Variables" -> 'Variable' skiltyje pačiam viršuje rasti "Path" -> Paspausti ir "edit" -> "new" -> įrašyti "C:\msys64\mingw32".
 3) Atsisiųsti [Visual Studio Code](https://code.visualstudio.com/)
 4) Atidaryti vscode ir atsisiųsti extension [GitHub Pull Requests](https://marketplace.visualstudio.com/items?itemName=GitHub.vscode-pull-request-github) (nepamirškite kitų reikalingų extensions)
