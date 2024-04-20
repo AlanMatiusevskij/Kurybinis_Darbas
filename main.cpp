@@ -28,3 +28,4 @@ int main(int argc, char *argv[]){
     SDL_Quit();
     return EXIT_SUCCESS; //galima tiesiog 0, cia yra #define dalykas, kury pamokyt galiu, not sure what exactly its purpose is
 }
+//CHANGED  
