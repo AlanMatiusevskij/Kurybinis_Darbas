@@ -25,3 +25,17 @@ Kaip paruošti visus failus:
     > //make komanda sukuria programą .exe, o ./main ją tiesiog atidaro
 11) Kai kodas veikia ir norite jį sinchronizuoti su projektu, mygtukų juostoje kairėje spauskite "Source Control" ir "Commit & Push". Patikrinkite ar nėra nesutapimų, gal reikalingas kodas ištrinamas ir gal yra klaidų su kito žmogaus atnaujintu pagrindiniu kodu. Jeigu viskas gerai, patvirtinkite "Pull request" ir ištrinkite "Kurybinis_darbas" aplanką savo kompiuteryje.
 12) kartokite punktą nr 6.
+
+
+
+### Installation of MinGW C/C++ compiler for Windows (32-bit)
+
+# Install MSYS2 on your computer and follow the steps below.
+
+# Open MSYS2 terminal, and run the following command
+pacman -Syu
+
+# Reopen MSYS2 terminal and run the following command
+pacman -Syu
+pacman -S --needed base-devel mingw-w64-i686-toolchain
+pacman -S pkgconf
