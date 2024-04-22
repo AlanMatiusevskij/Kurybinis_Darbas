@@ -285,7 +285,7 @@ double acc;
 bool fell = false;
 void simulation3(){
     difX = lastPos.x - branch[0].bone.pos.x1;
-    difY = lastPos.y - branch[0].bone.pos.y1 - 2;
+    difY = lastPos.y - branch[0].bone.pos.y1 -2;
     
     for(int i = branch.size() -1; i> lastStatic; i--){
         joints *J = &branch[i];
@@ -312,8 +312,8 @@ void simulation3(){
             //However, jega yra nukreipta w kampu kaip virsuje, bet viskas judes PRIESINGAI, tai:
             w += pi;
         }
-        else if(difY > 0) w = pi3_2;
-        else if(difY < 0) w = -h_pi;
+        else if(difY > 0) w = h_pi;
+        else if(difY < 0) w = pi3_2;
         else if(difX > 0) w = pi;
         else if(difX < 0) w = -2*pi;
 
@@ -322,11 +322,16 @@ void simulation3(){
         //Adjust the angle because limbs move
             //DELTA_alfa - the angle the limbs constantly move towards to
         double alfa = J->default_angle-beta;
-        w -= alfa;
+        if(w > beta) w*=-1;
+
+        //w -= alfa;
         
         //angular velocity
-        double a_vel = w/30; //30 is some koeficient
-        beta -=a_vel;
+        double a_vel = w/50; //30 is some koeficient
+        if(i == 3 || i == 5){
+            beta +=a_vel;
+        }
+        else  beta -=a_vel;
 
         //Angular restrictions
         if(beta <= J->minAngle) beta = J->minAngle;
