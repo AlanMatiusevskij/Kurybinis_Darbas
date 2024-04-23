@@ -263,95 +263,103 @@ bool isFalling(){
 //         if(beta <= br->minAngle) beta = br->minAngle;
 //         else if(beta >= br->maxAngle-0.005) beta = br->maxAngle-0.005;
 
+// //         //Update positions
+// //         br->bone.pos.x2 = br->bone.pos.x1 + cosf(beta) * br->bone.length;
+// //         br->bone.pos.y2 = br->bone.pos.y1 - sinf(beta) * br->bone.length;
+
+// //         br->bone.pos.x1 += difX;
+// //         br->bone.pos.x2 += difX;
+// //         br->bone.pos.y1 += difY;
+// //         br->bone.pos.y2 += difY;
+// //     }
+// //     branch[0].bone.pos.x1 += difX; branch[1].bone.pos.x1 += difX;
+// //     branch[0].bone.pos.x2 += difX; branch[1].bone.pos.x2 += difX;
+// //     branch[0].bone.pos.y1 += difY; branch[1].bone.pos.y1 += difY;
+// //     branch[0].bone.pos.y2 += difY; branch[1].bone.pos.y2 += difY;
+
+// //     return;
+// // }
+
+// double difX, difY;
+// double acc;
+// bool fell = false;
+// void simulation3(){
+//     difX = lastPos.x - branch[0].bone.pos.x1;
+//     difY = lastPos.y - branch[0].bone.pos.y1 -2;
+    
+//     for(int i = branch.size() -1; i> lastStatic; i--){
+//         joints *J = &branch[i];
+
+//         //Get current angle
+//         double beta = asinf(std::abs(J->bone.pos.y1 - J->bone.pos.y2)/J->bone.length);
+//         if(inCirclePos(I, &J->bone.pos)) beta = beta;
+//         else if(inCirclePos(II, &J->bone.pos)) beta = pi - beta;
+//         else if(inCirclePos(III, &J->bone.pos)) beta += pi;
+//         else if(inCirclePos(IV, &J->bone.pos)) beta = 2*pi - beta;
+//             //3 ir 4 yra rankos
+//         if((i == 3 || i == 4) && beta >= 0 && beta <= h_pi) beta += 2*pi;
+        
+//         //Angule influenced by the change in positions
+//         double w = 0;
+//         if(difX != 0 && difY != 0){
+//             w = atanf(std::abs(difY/difX));
+//             position_var temp;
+//             temp.x1 = lastPos.x; temp.x2 = branch[0].bone.pos.x1; temp.y1 = lastPos.y; temp.y2 = branch[0].bone.pos.y1;
+//             if(inCirclePos(I, &temp)) w = w;
+//             else if(inCirclePos(II, &temp)) w = pi - w;
+//             else if(inCirclePos(III, &temp)) w += pi;
+//             else if(inCirclePos(IV, &temp)) w = 2*pi - w;
+//             //However, jega yra nukreipta w kampu kaip virsuje, bet viskas judes PRIESINGAI, tai:
+//             w += pi;
+//         }
+//         else if(difY > 0) w = h_pi;
+//         else if(difY < 0) w = pi3_2;
+//         else if(difX > 0) w = pi;
+//         else if(difX < 0) w = -2*pi;
+
+//         //if(w > 2*pi) w-=2*pi;
+
+//         //Adjust the angle because limbs move
+//             //DELTA_alfa - the angle the limbs constantly move towards to
+//         double alfa = J->default_angle-beta;
+//         if(w > beta) w*=-1;
+
+//         //w -= alfa;
+        
+//         //angular velocity
+//         double a_vel = w/50; //30 is some koeficient
+//         if(i == 3 || i == 5){
+//             beta +=a_vel;
+//         }
+//         else  beta -=a_vel;
+
+//         //Angular restrictions
+//         if(beta <= J->minAngle) beta = J->minAngle;
+//         else if(beta >= J->maxAngle-0.005) beta = J->maxAngle-0.005; 
+
 //         //Update positions
-//         br->bone.pos.x2 = br->bone.pos.x1 + cosf(beta) * br->bone.length;
-//         br->bone.pos.y2 = br->bone.pos.y1 - sinf(beta) * br->bone.length;
-
-//         br->bone.pos.x1 += difX;
-//         br->bone.pos.x2 += difX;
-//         br->bone.pos.y1 += difY;
-//         br->bone.pos.y2 += difY;
+//         J->bone.pos.x2 = J->bone.pos.x1 + cosf(beta)*J->bone.length;
+//         J->bone.pos.y2 = J->bone.pos.y1 - sinf(beta)*J->bone.length;
 //     }
-//     branch[0].bone.pos.x1 += difX; branch[1].bone.pos.x1 += difX;
-//     branch[0].bone.pos.x2 += difX; branch[1].bone.pos.x2 += difX;
-//     branch[0].bone.pos.y1 += difY; branch[1].bone.pos.y1 += difY;
-//     branch[0].bone.pos.y2 += difY; branch[1].bone.pos.y2 += difY;
 
+//     //Sync positions
+//     lastPos.x = branch[0].bone.pos.x1;
+//     lastPos.y = branch[0].bone.pos.y1;
+
+//     for(int i = 0; i < branch.size(); i++){
+//         branch[i].bone.pos.x1 += difX;
+//         branch[i].bone.pos.x2 += difX;
+//         branch[i].bone.pos.y1 += difY;
+//         branch[i].bone.pos.y2 += difY;
+//     }
 //     return;
 // }
 
 double difX, difY;
 double acc;
-bool fell = false;
-void simulation3(){
-    difX = lastPos.x - branch[0].bone.pos.x1;
-    difY = lastPos.y - branch[0].bone.pos.y1 -2;
-    
-    for(int i = branch.size() -1; i> lastStatic; i--){
-        joints *J = &branch[i];
+void simulation4(){
+    //
 
-        //Get current angle
-        double beta = asinf(std::abs(J->bone.pos.y1 - J->bone.pos.y2)/J->bone.length);
-        if(inCirclePos(I, &J->bone.pos)) beta = beta;
-        else if(inCirclePos(II, &J->bone.pos)) beta = pi - beta;
-        else if(inCirclePos(III, &J->bone.pos)) beta += pi;
-        else if(inCirclePos(IV, &J->bone.pos)) beta = 2*pi - beta;
-            //3 ir 4 yra rankos
-        if((i == 3 || i == 4) && beta >= 0 && beta <= h_pi) beta += 2*pi;
-        
-        //Angule influenced by the change in positions
-        double w = 0;
-        if(difX != 0 && difY != 0){
-            w = atanf(std::abs(difY/difX));
-            position_var temp;
-            temp.x1 = lastPos.x; temp.x2 = branch[0].bone.pos.x1; temp.y1 = lastPos.y; temp.y2 = branch[0].bone.pos.y1;
-            if(inCirclePos(I, &temp)) w = w;
-            else if(inCirclePos(II, &temp)) w = pi - w;
-            else if(inCirclePos(III, &temp)) w += pi;
-            else if(inCirclePos(IV, &temp)) w = 2*pi - w;
-            //However, jega yra nukreipta w kampu kaip virsuje, bet viskas judes PRIESINGAI, tai:
-            w += pi;
-        }
-        else if(difY > 0) w = h_pi;
-        else if(difY < 0) w = pi3_2;
-        else if(difX > 0) w = pi;
-        else if(difX < 0) w = -2*pi;
-
-        //if(w > 2*pi) w-=2*pi;
-
-        //Adjust the angle because limbs move
-            //DELTA_alfa - the angle the limbs constantly move towards to
-        double alfa = J->default_angle-beta;
-        if(w > beta) w*=-1;
-
-        //w -= alfa;
-        
-        //angular velocity
-        double a_vel = w/50; //30 is some koeficient
-        if(i == 3 || i == 5){
-            beta +=a_vel;
-        }
-        else  beta -=a_vel;
-
-        //Angular restrictions
-        if(beta <= J->minAngle) beta = J->minAngle;
-        else if(beta >= J->maxAngle-0.005) beta = J->maxAngle-0.005; 
-
-        //Update positions
-        J->bone.pos.x2 = J->bone.pos.x1 + cosf(beta)*J->bone.length;
-        J->bone.pos.y2 = J->bone.pos.y1 - sinf(beta)*J->bone.length;
-    }
-
-    //Sync positions
-    lastPos.x = branch[0].bone.pos.x1;
-    lastPos.y = branch[0].bone.pos.y1;
-
-    for(int i = 0; i < branch.size(); i++){
-        branch[i].bone.pos.x1 += difX;
-        branch[i].bone.pos.x2 += difX;
-        branch[i].bone.pos.y1 += difY;
-        branch[i].bone.pos.y2 += difY;
-    }
     return;
 }
 
@@ -438,7 +446,7 @@ int main(int argc, char *argv[]){
             break;
         }
 
-        simulation3();
+        simulation4();
         SDL_SetRenderDrawColor(rend, 30,30,30,255);
         SDL_RenderClear(rend);
 
