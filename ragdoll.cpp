@@ -6,7 +6,7 @@
 
 const float pi = 3.14159265359;
       float h_pi = pi/2, pi3_2 = pi * 3 / 2;
-const int WIDTH = 1500, HEIGHT = 600, UPS = 80;
+const int WIDTH = 1500, HEIGHT = 600, UPS = 30;
 double g = 0.1, airfriction = 0.01;
 
 struct position_var{
@@ -354,9 +354,9 @@ bool isFalling(){
 // }
 
 //int blackList;
-int k;
-double offset = 10*pi/1800;
-double difX = 0, difY = 0, angle_acc = 0.0001, move_acc = 1, Fangle = h_pi, anglSpeed = 0;
+double offset = 0.05;
+double difX = 0, difY = 0, angle_acc = 0.01, move_acc = 1, Fangle = 0, anglSpeed[7] ={0,0,0,0,0,0,0};
+/// @brief 
 void simulation4(){
     
     for(int i = branch.size()-1; i > lastStatic; i--){
@@ -377,21 +377,17 @@ void simulation4(){
         if(w1 > 2*pi) w1-=2*pi;
 
         //The angle the joints stride to
-        double w2 = J->default_angle/k;
+        double w2 = J->default_angle/100;
         if(w1 > w2) w2 *= -1;
 
         //Sum up the end angle
         double alfa = w1 + w2;
-        
-        //Update positions
-        difX = cosf(Fangle)*move_acc;
-        difY = sinf(Fangle)*move_acc;
-
         if(std::abs(alfa-beta) > offset){
             int k = 1;
-            if(2*pi - beta + alfa < beta - alfa) k = -1;
-            anglSpeed = anglSpeed + k * angle_acc;
-            beta += anglSpeed;
+            if(beta > alfa) k = -1;
+
+            anglSpeed[i] +=  k * angle_acc;
+            beta += anglSpeed[i];
         }
 
         //Update joint angles
@@ -399,6 +395,9 @@ void simulation4(){
         J->bone.pos.y2 = J->bone.pos.y1 - sinf(beta) * J->bone.length;
 
     }
+    //Update positions
+    difX = cosf(Fangle)*move_acc;
+    difY = sinf(Fangle)*move_acc;
 
     //Update positions for all joints
     for(int i = 0; i < branch.size(); i++){
@@ -407,7 +406,6 @@ void simulation4(){
         branch[i].bone.pos.y1 -= difY;
         branch[i].bone.pos.y2 -= difY;
     }
-
     return;
 }
 
@@ -417,7 +415,7 @@ void createStructure(int index){
 
     if(index == STICKMANAS){
         branch.resize(7);
-        lastStatic = -1;
+        lastStatic = 1;
         //Apatine stuburo dalis
             //Angles
             branch[0].default_angle = h_pi; branch[0].maxAngle = h_pi; branch[0].minAngle = h_pi; branch[0].delta_angle = 0;
