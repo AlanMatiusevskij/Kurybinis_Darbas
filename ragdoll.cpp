@@ -6,7 +6,7 @@
 
 const float pi = 3.14159265359;
       float h_pi = pi/2, pi3_2 = pi * 3 / 2;
-const int WIDTH = 1500, HEIGHT = 800, UPS = 80;
+const int WIDTH = 1500, HEIGHT = 600, UPS = 80;
 double g = 0.1, airfriction = 0.01;
 
 struct position_var{
@@ -47,8 +47,6 @@ struct pixel_info{
     pixel_var coord;
 };
 std::vector<std::vector<pixel_info>> objects;
-double offset = 12 * pi/180; //max delta angle+ 2
-double restoreSpeed = 0.1;
 
 void drawLines(SDL_Renderer**rend){
     for(joints item : branch)
@@ -355,10 +353,60 @@ bool isFalling(){
 //     return;
 // }
 
-double difX, difY;
-double acc;
+//int blackList;
+int k;
+double offset = 10*pi/1800;
+double difX = 0, difY = 0, angle_acc = 0.0001, move_acc = 1, Fangle = h_pi, anglSpeed = 0;
 void simulation4(){
-    //
+    
+    for(int i = branch.size()-1; i > lastStatic; i--){
+        //Pointer to the current joint
+        joints *J = &branch[i];
+
+        //Current angle of the pointer J
+        double beta = asinf(std::abs(J->bone.pos.y1 - J->bone.pos.y2)/J->bone.length);
+        if(inCirclePos(I, &J->bone.pos)) beta = beta;
+        else if(inCirclePos(II, &J->bone.pos)) beta = pi - beta;
+        else if(inCirclePos(III, &J->bone.pos)) beta += pi;
+        else if(inCirclePos(IV, &J->bone.pos)) beta = 2*pi - beta;
+            //3 ir 4 yra rankos
+        if((i == 3 || i == 4) && beta >= 0 && beta <= h_pi) beta += 2*pi;
+
+        //The opposite angle of movement
+        double w1 = Fangle + pi;
+        if(w1 > 2*pi) w1-=2*pi;
+
+        //The angle the joints stride to
+        double w2 = J->default_angle/k;
+        if(w1 > w2) w2 *= -1;
+
+        //Sum up the end angle
+        double alfa = w1 + w2;
+        
+        //Update positions
+        difX = cosf(Fangle)*move_acc;
+        difY = sinf(Fangle)*move_acc;
+
+        if(std::abs(alfa-beta) > offset){
+            int k = 1;
+            if(2*pi - beta + alfa < beta - alfa) k = -1;
+            anglSpeed = anglSpeed + k * angle_acc;
+            beta += anglSpeed;
+        }
+
+        //Update joint angles
+        J->bone.pos.x2 = J->bone.pos.x1 + cosf(beta) * J->bone.length;
+        J->bone.pos.y2 = J->bone.pos.y1 - sinf(beta) * J->bone.length;
+
+    }
+
+    //Update positions for all joints
+    for(int i = 0; i < branch.size(); i++){
+        branch[i].bone.pos.x1 += difX;
+        branch[i].bone.pos.x2 += difX;
+        branch[i].bone.pos.y1 -= difY;
+        branch[i].bone.pos.y2 -= difY;
+    }
 
     return;
 }
