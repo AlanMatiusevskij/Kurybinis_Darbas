@@ -1,7 +1,6 @@
 //VISKA KOMENTUOJAM
 #include<iostream>
 #include<SDL2/SDL.h>
-#include<SDL2/SDL_ttf.h>
 //mes nenaudojam 'using namespace std', todėl prieš cout ir cin ir kitas komandas reik naudoti std::
 
 int main(int argc, char *argv[]){
