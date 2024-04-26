@@ -133,13 +133,19 @@ struct MOVEMENT_PROCESS{
     
 };
 
-void MOVEMENT(){
+void MOVEMENT(int CONDITION){ //0 PROCEED with tasks from before
+
+
+    return; 
+}
+
+void checkMovementStatus(){
     //3 stages: if no support present - fall vertically;
             //  IF not falling, Move towards a point that is accessible
             //  iff the point is not accessible and the character is not falling, find a way to jump towards the position
 
     int returnValue = isFalling();//checks all legs;, If alteast one is hovering: moves or jumps away; -1 - not falling; 0, falling; 1- alteast one leg dangling
-    if(returnValue == -1); //carry out what youv been doing before
+    if(returnValue == -1) MOVEMENT(0); //carry out what youv been doing before
     if(returnValue == 0); //FALL in place (keep intertia if in the middle of moving)
     if(returnValue == 1); //find where to put legs/move to the side; If not possible, jump off;
 
@@ -152,7 +158,7 @@ void simulation(){
     // isClipping();
     // rotationAngle = Fangle;
     
-    MOVEMENT();
+    checkMovementStatus();
 
     //Loop through all moving joints
     for(int i = branch.size()-1; i > lastStatic; i--){
@@ -333,7 +339,7 @@ int main(int argc, char *argv[]){
 
     createStructure(STICKMANAS);
 
-    //Create a floor;
+    //Create a temp floor;
     position_var tmp; tmp.x1 = 0; tmp.x2 = WIDTH -1; tmp.y1 = HEIGHT*8/10; tmp.y2 = HEIGHT*8/10;
     floors.push_back(tmp);
     
@@ -365,7 +371,7 @@ int main(int argc, char *argv[]){
     SDL_Quit();
     return EXIT_SUCCESS;
 }
-//note: 0 AI or any other teaching/copying material (except SDL/c++ wiki when needed) involved ;)
+//note: 0 AI or any other teaching/copying material (except SDL/c++ wiki and stack overflow when needed) involved ;)
 
     // std::cout << ("\033[31mThis is red font.\033[0m") << "\n";
     // std::cout << ("\033[32mThis is green font.\033[0m")<< "\n";
