@@ -1,6 +1,6 @@
 //Visi libraries, kurių mums reikia
 #pragma once
-#define NOMINMAX
+#define NOMINMAX //<_ cmath min ir max overwritinami be šito
 #include<Windows.h>
 
 #include<SDL2/SDL.h>
