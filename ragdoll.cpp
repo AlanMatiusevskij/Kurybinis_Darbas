@@ -1,4 +1,9 @@
-#include"includes.h"
+#include<SDL2/SDL.h>
+#include<iostream>
+#include<vector>
+#include<chrono>
+#include<cmath>
+#include<algorithm>
 
 const int WIDTH = 1500, HEIGHT = 600, UPS = 144;
 const double pi = 3.14159265359; 
@@ -242,8 +247,3 @@ int main(int argc, char *argv[]){
 }
 //note: 0 AI or any other teaching/copying material (except SDL/c++ wiki and stack overflow when needed) involved ;)
 
-    // std::cout << ("\033[31mThis is red font.\033[0m") << "\n";
-    // std::cout << ("\033[32mThis is green font.\033[0m")<< "\n";
-    // std::cout << ("\033[33mThis is yellow font.\033[0m")<< "\n";
-    // std::cout << ("\033[34mThis is orange font.\033[0m THIS IS WHITE")<< "\n";
-    //37 is white
