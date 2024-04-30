@@ -31,6 +31,5 @@ void INITIALIZE(SDL_Window*wind, SDL_Renderer *rend){
     wind = SDL_CreateWindow(WIND_TITLE.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_ALWAYS_ON_TOP);
     rend = SDL_CreateRenderer(wind, -1, SDL_RENDERER_ACCELERATED);
 
-
     return;
 }
