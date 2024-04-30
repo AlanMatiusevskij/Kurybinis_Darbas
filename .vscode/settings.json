@@ -80,7 +80,9 @@
         "numbers": "cpp",
         "span": "cpp",
         "cinttypes": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "condition_variable": "cpp",
+        "semaphore": "cpp"
     },
     "C_Cpp.default.compilerPath": "C:\\msys64\\mingw32\\bin\\g++.exe"
 }
