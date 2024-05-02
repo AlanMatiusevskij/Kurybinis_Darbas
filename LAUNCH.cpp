@@ -8,6 +8,7 @@ Uint32 updatePlatforms(Uint32 interval, void *data);
 int platformThreadFunc(void* data);
 
 //Defining variables
+SDL_TimerID platformTimer;
 
 //MAGIJA prasideda nuo čia
 int main(int argc, char *argv[]){
