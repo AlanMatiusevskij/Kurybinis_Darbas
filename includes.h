@@ -10,6 +10,7 @@
 #include<SDL2/SDL_syswm.h>
 
 #include<iostream>
+#include<fstream>
 #include<vector>
 #include<chrono>
 #include<cmath>
@@ -27,7 +28,6 @@ SDL_Event evt;
 HWND hWnd;
 
 //A timer that constantly updates platform positions
-SDL_TimerID platformTimer;
 std::vector<SDL_Thread*> threads{};
 std::vector<bool> threadRunning{};
 struct pixel_struct{
