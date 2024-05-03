@@ -70,17 +70,20 @@ bool MakeWindowTranparent(){
     return SetLayeredWindowAttributes(hWnd, colorKey, 0, LWA_COLORKEY);
 }
 
-//Note: use this only for debug(or curiosity), but do not use it with threads at the same time!
-void displayFloors(){
-    SDL_SetRenderDrawColor(rend, COLOR_TO_IGNORE.r, COLOR_TO_IGNORE.g, COLOR_TO_IGNORE.b, COLOR_TO_IGNORE.a);
-    SDL_RenderClear(rend);
-    SDL_RenderPresent(rend);
-    platformPoints = GETSCREENGROUND(platformScanColorME);
-    SDL_SetRenderDrawColor(rend, 255,255,0,255);
-    for(int i = 0; i < platformPoints.size(); i++){
-        SDL_RenderDrawPoint(rend, platformPoints[i].x, platformPoints[i].y);
-    }
-}
+
+
+
+//use this only for debug(or curiosity), but do not use it with threads at the same time!
+// void displayFloors(){
+//     SDL_SetRenderDrawColor(rend, COLOR_TO_IGNORE.r, COLOR_TO_IGNORE.g, COLOR_TO_IGNORE.b, COLOR_TO_IGNORE.a);
+//     SDL_RenderClear(rend);
+//     SDL_RenderPresent(rend);
+//     platformPoints = GETSCREENGROUND(platformScanColorME);
+//     SDL_SetRenderDrawColor(rend, 255,255,0,255);
+//     for(int i = 0; i < platformPoints.size(); i++){
+//         SDL_RenderDrawPoint(rend, platformPoints[i].x, platformPoints[i].y);
+//     }
+// }
 
 /*stupidly slow
     COLORREF key;

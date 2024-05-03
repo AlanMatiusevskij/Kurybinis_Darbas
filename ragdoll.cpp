@@ -24,8 +24,8 @@ double angleEM = 0.1;
 bool ALREADYLANDED = false;
 bool ONGROUND = false;
 double general_velocityY = 0, general_velocityX = 0;
-double drink = 1.6; //idk
-double g = 0.015;
+double drink = 1.5; //idk
+double g = 0.02;
 SDL_Event evt;
 std::vector<pos_struct> ground;
 int mx, my;
@@ -97,7 +97,7 @@ int k = -1;
 void HAND(){
     //I want the angle betweenthe one between 2 bones;, but formula uses a different one; ANgle/2 seems to give the one i want
     calcAngle = (pi-ANGLE)/2*k; //k defines direction
-    std::cout << calcAngle*180/pi <<", " << ANGLE*180/pi<<"\n";
+    //std::cout << calcAngle*180/pi <<", " << ANGLE*180/pi<<"\n";
     joints[1] = {cosf(calcAngle +aleArmAngle)*armLength + joints[0].x, joints[0].y-sinf(calcAngle + aleArmAngle)*armLength};
     joints[2] = {cosf(2*pi-calcAngle + aleArmAngle)*armLength + joints[1].x, joints[1].y-sinf(2*pi-calcAngle + aleArmAngle)*armLength};
     return;
@@ -111,7 +111,7 @@ void DRAWHANDS(SDL_Renderer *rend){
 }
 
 //iterates through ground and objects(items, like popcorn) vectors
-int PEM = 2;
+int PEM = 2.5;
 void collisionDetection(){
     for(pos_struct floor : ground){
         //feet is 0th
@@ -123,22 +123,20 @@ void collisionDetection(){
         }
     }
 }
-double maxAngleSpeed = 0.03;
-double angleFallenTo;
-void balanceJumps(){
+double maxAngleSpeed = 0.05;
+void balanceFoo(){
     // angleSpeed +=
     // angleSpeed +=
 
     return;
 }
-
 void angleRotation(){
     if(false)
-        balanceJumps();
+        balanceFoo();
     else {
-        angleSpeed+=(defaultAngle-ANGLE)/1500;
-        angleSpeed+=(ANGLE-defaultAngle)/2500;
-        //if(std::abs(ANGLE) >= pi) angleSpeed = -1 * angleSpeed / 1.1;
+        angleSpeed+=(defaultAngle-ANGLE)/800;
+        angleSpeed+=(ANGLE-defaultAngle)/2000;
+        if(ANGLE < 0.04 && angleSpeed < 0) angleSpeed =  -angleSpeed / 2;
         if(std::abs(angleSpeed) > maxAngleSpeed) angleSpeed = maxAngleSpeed *(std::abs(angleSpeed)/angleSpeed);
     }
     return;
@@ -148,13 +146,11 @@ void PHYSICS(){
     if(!ONGROUND)
         general_velocityY+=g;
     if(ONGROUND && ALREADYLANDED){
-        angleFallenTo = ANGLE;
-
         general_velocityY = -1*general_velocityY/drink;
         ALREADYLANDED = false;
         general_velocityX/=drink;
         if(std::abs(joints[0].y - ground[0].y1) < PEM-1) general_velocityX += cosf( h_pi+calcAngle)*armLength / 100;
-        angleSpeed-=general_velocityY*(g+0.01) *(calcAngle/std::abs(calcAngle))*k*(-1) * drink;
+        angleSpeed-=general_velocityY*(g+0.01) *(calcAngle/std::abs(calcAngle))*k*(-1)/1.5;
     }
 
     joints[0].y += general_velocityY;
@@ -184,7 +180,7 @@ int main(int argc, char *argv[]){
     SDL_Renderer* rend = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
     ANGLE = 2*acosf(distance/(2*armLength));
-    ground.push_back({0, HEIGHT*8/10, WIDTH-1, HEIGHT*8/10});
+    //ground.push_back({0, HEIGHT*8/10, WIDTH-1, HEIGHT*8/10});
     joints.push_back({700, 300, -pi});
 
     joints.push_back({cosf(ANGLE)*armLength + 700, 300-sinf(ANGLE)*armLength,-1});
