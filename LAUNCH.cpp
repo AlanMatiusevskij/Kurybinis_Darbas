@@ -1,31 +1,24 @@
 #include"includes.h"
+
 #include"windowscripts.cpp"
+#include"threads.cpp"
+#include"character.cpp"
 
 //Defining functions
-void updatePlatforms();
 void INITIALIZE();
-Uint32 updatePlatforms(Uint32 interval, void *data);
-int platformThreadFunc(void* data);
 
 //Defining variables
-SDL_TimerID platformTimer;
 
 //MAGIJA prasideda nuo čia
 int main(int argc, char *argv[]){
     INITIALIZE();
-
-    //loads an image, creates its texture and creates a rect for it;
-    // SDL_Surface* surfc= SDL_LoadBMP("./image.bmp");
-    // SDL_Texture *legText;
-    // legText=SDL_CreateTextureFromSurface(rend, surfc);
-    // SDL_Rect img{500,500,200,250};
 
     while(true){
         SDL_SetRenderDrawColor(rend, COLOR_TO_IGNORE.r, COLOR_TO_IGNORE.g, COLOR_TO_IGNORE.b, COLOR_TO_IGNORE.a);
         SDL_RenderClear(rend);
         //Pradžia
         
-        //SDL_RenderCopyEx(rend, legText, NULL, &img, i, new SDL_Point{img.w-40, 0}, SDL_FLIP_NONE);
+        presentBones();
 
         //Inputs
         SDL_PollEvent(&evt);
@@ -41,7 +34,7 @@ int main(int argc, char *argv[]){
 }
 
 void INITIALIZE(){
-    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
+    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_TIMER);
     
     wind = SDL_CreateWindow(WIND_TITLE.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_ALWAYS_ON_TOP);
     rend = SDL_CreateRenderer(wind, -1, SDL_RENDERER_ACCELERATED);
@@ -53,37 +46,10 @@ void INITIALIZE(){
     hWnd = wmInfo.info.win.window;
     MakeWindowTranparent();
 
-    //Start platform scanner thing
-    platformTimer = SDL_AddTimer(500, updatePlatforms, nullptr);
+    //Start platform scanner thing    
+    startPlatformScanThread();
 
-    threads.resize(1);
-    threadRunning.push_back(false);
+    createCharacterBones();
+
     return;
 }
-
-/**
- * a function called every -interval- milliseconds; Creates a thread that calls the GETSCREENGROUND function.
- * SHOULDN'T BE MANUALLY CALLED
-*/
-Uint32 updatePlatforms(Uint32 interval, void *data){
-    //for now manually assigned that threads[0]th is the thread used for platforms
-    if(!threadRunning[0]){
-        threadRunning[0] = true;
-        threads[0] = SDL_CreateThread(platformThreadFunc, "platformthread", nullptr);
-    }
-    return interval;
-}
-/**
- * a thread function called by updatePlatforms(...); Calls the GETSCREENGROUND function.
- * SHOULDN'T BE MANUALLY CALLED
-*/
-int platformThreadFunc(void* data){
-    platformPoints = GETSCREENGROUND(platformScanColorME);
-    threadRunning[0] = false;
-    return 0;
-}
-
-
-
-
-//little tiny note - did not copy others or ask AI to write code for this project at any time EXCEPT: making window partially invisible; quickly get and save screen bitmap data; 

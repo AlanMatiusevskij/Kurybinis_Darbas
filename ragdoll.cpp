@@ -19,7 +19,7 @@ struct point_struct{
     int x, y;
 };
 double angleSpeed = 0;
-double defaultAngle = 170*pi/180;
+double defaultAngle = 160*pi/180;
 double angleEM = 0.1;
 bool ALREADYLANDED = false;
 bool ONGROUND = false;
@@ -97,7 +97,7 @@ int k = -1;
 void HAND(){
     //I want the angle betweenthe one between 2 bones;, but formula uses a different one; ANgle/2 seems to give the one i want
     calcAngle = (pi-ANGLE)/2*k; //k defines direction
-    std::cout << calcAngle*180/pi <<", " << ANGLE*180/pi<<"\n";
+    //std::cout << calcAngle*180/pi <<", " << ANGLE*180/pi<<"\n";
     joints[1] = {cosf(calcAngle +aleArmAngle)*armLength + joints[0].x, joints[0].y-sinf(calcAngle + aleArmAngle)*armLength};
     joints[2] = {cosf(2*pi-calcAngle + aleArmAngle)*armLength + joints[1].x, joints[1].y-sinf(2*pi-calcAngle + aleArmAngle)*armLength};
     return;
@@ -150,7 +150,7 @@ void PHYSICS(){
         ALREADYLANDED = false;
         general_velocityX/=drink;
         if(std::abs(joints[0].y - ground[0].y1) < PEM-1) general_velocityX += cosf( h_pi+calcAngle)*armLength / 100;
-        angleSpeed-=general_velocityY*(g+0.01) *(calcAngle/std::abs(calcAngle))*k*(-1) * drink;
+        angleSpeed-=general_velocityY*(g+0.01) *(calcAngle/std::abs(calcAngle))*k*(-1)/1.5;
     }
 
     joints[0].y += general_velocityY;
@@ -180,7 +180,7 @@ int main(int argc, char *argv[]){
     SDL_Renderer* rend = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
     ANGLE = 2*acosf(distance/(2*armLength));
-    ground.push_back({0, HEIGHT*8/10, WIDTH-1, HEIGHT*8/10});
+    //ground.push_back({0, HEIGHT*8/10, WIDTH-1, HEIGHT*8/10});
     joints.push_back({700, 300, -pi});
 
     joints.push_back({cosf(ANGLE)*armLength + 700, 300-sinf(ANGLE)*armLength,-1});
