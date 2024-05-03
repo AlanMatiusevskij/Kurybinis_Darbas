@@ -13,16 +13,24 @@ SDL_TimerID platformTimer;
 //MAGIJA prasideda nuo čia
 int main(int argc, char *argv[]){
     INITIALIZE();
+
+    //loads an image, creates its texture and creates a rect for it;
+    // SDL_Surface* surfc= SDL_LoadBMP("./image.bmp");
+    // SDL_Texture *legText;
+    // legText=SDL_CreateTextureFromSurface(rend, surfc);
+    // SDL_Rect img{500,500,200,250};
+
     while(true){
         SDL_SetRenderDrawColor(rend, COLOR_TO_IGNORE.r, COLOR_TO_IGNORE.g, COLOR_TO_IGNORE.b, COLOR_TO_IGNORE.a);
         SDL_RenderClear(rend);
         //Pradžia
+        
+        //SDL_RenderCopyEx(rend, legText, NULL, &img, i, new SDL_Point{img.w-40, 0}, SDL_FLIP_NONE);
 
         //Inputs
         SDL_PollEvent(&evt);
         if(evt.type == SDL_QUIT || evt.type == SDL_KEYDOWN && evt.key.keysym.sym == SDLK_q)
             break;
-
 
         //Pabaiga
         SDL_RenderPresent(rend);

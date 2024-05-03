@@ -19,13 +19,13 @@ struct point_struct{
     int x, y;
 };
 double angleSpeed = 0;
-double defaultAngle = 160*pi/180;
+double defaultAngle = 170*pi/180;
 double angleEM = 0.1;
 bool ALREADYLANDED = false;
 bool ONGROUND = false;
 double general_velocityY = 0, general_velocityX = 0;
-double drink = 1.6; //idk
-double g = 0.015;
+double drink = 1.5; //idk
+double g = 0.02;
 SDL_Event evt;
 std::vector<pos_struct> ground;
 int mx, my;
@@ -111,7 +111,7 @@ void DRAWHANDS(SDL_Renderer *rend){
 }
 
 //iterates through ground and objects(items, like popcorn) vectors
-int PEM = 2;
+int PEM = 2.5;
 void collisionDetection(){
     for(pos_struct floor : ground){
         //feet is 0th
@@ -123,22 +123,20 @@ void collisionDetection(){
         }
     }
 }
-double maxAngleSpeed = 0.03;
-double angleFallenTo;
-void balanceJumps(){
+double maxAngleSpeed = 0.05;
+void balanceFoo(){
     // angleSpeed +=
     // angleSpeed +=
 
     return;
 }
-
 void angleRotation(){
     if(false)
-        balanceJumps();
+        balanceFoo();
     else {
-        angleSpeed+=(defaultAngle-ANGLE)/1500;
-        angleSpeed+=(ANGLE-defaultAngle)/2500;
-        //if(std::abs(ANGLE) >= pi) angleSpeed = -1 * angleSpeed / 1.1;
+        angleSpeed+=(defaultAngle-ANGLE)/800;
+        angleSpeed+=(ANGLE-defaultAngle)/2000;
+        if(ANGLE < 0.04 && angleSpeed < 0) angleSpeed =  -angleSpeed / 2;
         if(std::abs(angleSpeed) > maxAngleSpeed) angleSpeed = maxAngleSpeed *(std::abs(angleSpeed)/angleSpeed);
     }
     return;
@@ -148,8 +146,6 @@ void PHYSICS(){
     if(!ONGROUND)
         general_velocityY+=g;
     if(ONGROUND && ALREADYLANDED){
-        angleFallenTo = ANGLE;
-
         general_velocityY = -1*general_velocityY/drink;
         ALREADYLANDED = false;
         general_velocityX/=drink;

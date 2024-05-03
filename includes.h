@@ -18,7 +18,7 @@
 
 //Global variables
 const std::string WIND_TITLE{"Petto - your personal delight"};
-int UPS = 20;
+int UPS = 144;
 int WIDTH = GetSystemMetrics(SM_CXSCREEN), HEIGHT = GetSystemMetrics(SM_CYSCREEN);
 SDL_Color COLOR_TO_IGNORE = {255,0,255,255};
 int platformScanColorME = 5;
