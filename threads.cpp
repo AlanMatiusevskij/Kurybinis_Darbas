@@ -20,7 +20,6 @@ void startPlatformScanThread(){
     //kol 1 thread tik, sito uztenka
     threads.resize(1);
     threadRunning.push_back(false);
-
     platformTimer = SDL_AddTimer(500, updatePlatforms, nullptr);
     return;
 }

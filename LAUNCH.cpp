@@ -14,6 +14,7 @@ int main(int argc, char *argv[]){
     INITIALIZE();
 
     while(true){
+        SDL_GetMouseState(&mx, &my);
         SDL_SetRenderDrawColor(rend, COLOR_TO_IGNORE.r, COLOR_TO_IGNORE.g, COLOR_TO_IGNORE.b, COLOR_TO_IGNORE.a);
         SDL_RenderClear(rend);
         //Pradžia
@@ -24,6 +25,13 @@ int main(int argc, char *argv[]){
         SDL_PollEvent(&evt);
         if(evt.type == SDL_QUIT || evt.type == SDL_KEYDOWN && evt.key.keysym.sym == SDLK_q)
             break;
+        if(evt.type == SDL_MOUSEBUTTONDOWN && evt.button.button == SDL_BUTTON_LEFT)
+        std::cout << "yes";
+        SDL_RenderDrawLine(rend, 10, 10, 100, 10);
+        SDL_RenderDrawLine(rend, 10, 11, 100, 11);
+        SDL_RenderDrawLine(rend, 10, 12, 100, 12);
+        SDL_RenderDrawLine(rend, 10, 13, 100, 13);
+        SDL_RenderDrawLine(rend, 10, 14, 100, 14);
 
         //Pabaiga
         SDL_RenderPresent(rend);
@@ -48,8 +56,8 @@ void INITIALIZE(){
 
     //Start platform scanner thing    
     startPlatformScanThread();
-
     createCharacterBones();
 
     return;
 }
+//https://wiki.libsdl.org/SDL2/SDL_GetKeyboardState

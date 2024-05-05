@@ -64,11 +64,10 @@ std::vector<pixel_struct> GETSCREENGROUND(int colorME){
 */
 bool MakeWindowTranparent(){
     COLORREF colorKey = RGB(COLOR_TO_IGNORE.r, COLOR_TO_IGNORE.g, COLOR_TO_IGNORE.b);
-
     SetWindowLong(hWnd, GWL_EXSTYLE, GetWindowLong(hWnd, GWL_EXSTYLE) | WS_EX_LAYERED);
-
     return SetLayeredWindowAttributes(hWnd, colorKey, 0, LWA_COLORKEY);
 }
+
 
 
 

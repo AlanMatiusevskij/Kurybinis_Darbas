@@ -38,6 +38,8 @@ SDL_Renderer *rend;
 SDL_Event evt;
 //window handle
 HWND hWnd;
+//Pelės pozicija
+int mx, my;
 
 //Visi platformų taškai
 std::vector<pixel_struct> platformPoints;
