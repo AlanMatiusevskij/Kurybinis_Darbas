@@ -7,12 +7,15 @@
 */
 
 //Defining variables
+
 /** bitPointer is a pointer to an array of pixel rgb values.
 *   Each pixel is indexed every 4 elements as each element stores a particular value: | red, green, blue, alpha |*/
 BYTE *bitPointer = NULL;
+
 HDC hdc, hdcMemory;
 DWORD purposeIsToRemoveWarning;
 BITMAPINFO bitmap;
+bool altLMBPress = false;
 
 /**
  * Gets various information about the screen bitmap and saves it to an array ("bitpointer");
@@ -45,16 +48,13 @@ void getScreenPixelInfo(){
  *  Gets screen-relative pixel color information and, based on sharp color rgb value change +- color Margin of Error.
  *  @param colorME defines the color Margin of Error.
 */
-std::vector<pixel_struct> GETSCREENGROUND(int colorME){
+std::vector<int> GETSCREENGROUND(int colorME){
     getScreenPixelInfo();
-    std::vector<pixel_struct> cluster{};
-    int y, x;
+    std::vector<int> cluster{};
+    cluster.resize(WIDTH*HEIGHT);
     for(int index = WIDTH*4; index < 4 * WIDTH * HEIGHT; index += 4){
-        y = HEIGHT- index/(WIDTH*4);
-        x = index%(WIDTH*4)/4;
-
         if(std::abs((int)bitPointer[index] - (int)bitPointer[index-WIDTH*4]) > colorME && std::abs((int)bitPointer[index+1] - (int)bitPointer[index-WIDTH*4+1]) > colorME && std::abs((int)bitPointer[index+2] - (int)bitPointer[index-WIDTH*4+2]) > colorME)
-            cluster.push_back({x,y});
+            cluster[index/4] = 1;
     }
     return cluster;
 }
@@ -68,9 +68,14 @@ bool MakeWindowTranparent(){
     return SetLayeredWindowAttributes(hWnd, colorKey, 0, LWA_COLORKEY);
 }
 
-
-
-
+void altFunc(){
+    if(GetAsyncKeyState(VK_LBUTTON) == 0 && altLMBPress) altLMBPress = false;
+    if(GetAsyncKeyState(VK_LBUTTON) != 0 && !altLMBPress){
+        altLMBPress = true;
+        togoPoints.push_back({mx, -1});
+    }
+    return;
+}
 
 //use this only for debug(or curiosity), but do not use it with threads at the same time!
 // void displayFloors(){
