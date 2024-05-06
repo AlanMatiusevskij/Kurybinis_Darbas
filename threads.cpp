@@ -3,7 +3,7 @@
     Apie:
         Kodas atsakingas už multithreading.
     DĖMESIO:
-        NĖ VIENA IŠ ČIA ESANČIŲ FUNKCIJŲ NETURĖTŲ BŪTI IŠKVIEČIAMOS RANKINIU BŪDU!
+        NĖ VIENA IŠ ČIA ESANČIŲ FUNKCIJŲ NETURĖTŲ BŪTI IŠKVIEČIAMOS RANKINIU BŪDU, *IŠSKYRUS* TOS, KURIOS PRASIDEDA 'start*' žodžiu!
 */
 
 //Variables
@@ -20,7 +20,6 @@ void startPlatformScanThread(){
     //kol 1 thread tik, sito uztenka
     threads.resize(1);
     threadRunning.push_back(false);
-
     platformTimer = SDL_AddTimer(500, updatePlatforms, nullptr);
     return;
 }
@@ -35,7 +34,10 @@ Uint32 updatePlatforms(Uint32 interval, void *data){
 }
 
 int platformThreadFunc(void* data){
-    platformPoints = GETSCREENGROUND(platformScanColorME);
+    std::vector<int> tmp;
+    tmp = GETSCREENGROUND(platformScanColorME);
+    platformPoints.clear();
+    platformPoints = tmp;
     threadRunning[0] = false;
     return 0;
 }

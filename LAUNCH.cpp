@@ -14,17 +14,19 @@ int main(int argc, char *argv[]){
     INITIALIZE();
 
     while(true){
+        SDL_GetGlobalMouseState(&mx, &my);
         SDL_SetRenderDrawColor(rend, COLOR_TO_IGNORE.r, COLOR_TO_IGNORE.g, COLOR_TO_IGNORE.b, COLOR_TO_IGNORE.a);
         SDL_RenderClear(rend);
         //Pradžia
         
-        presentBones();
+        processCharacter();
 
         //Inputs
         SDL_PollEvent(&evt);
+        if(GetAsyncKeyState(VK_LMENU)!=0) altFunc();
         if(evt.type == SDL_QUIT || evt.type == SDL_KEYDOWN && evt.key.keysym.sym == SDLK_q)
             break;
-
+            
         //Pabaiga
         SDL_RenderPresent(rend);
         SDL_Delay((1/float(UPS))*1000);
@@ -34,6 +36,7 @@ int main(int argc, char *argv[]){
 }
 
 void INITIALIZE(){
+    //FreeConsole();
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_TIMER);
     
     wind = SDL_CreateWindow(WIND_TITLE.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_ALWAYS_ON_TOP);
@@ -46,10 +49,11 @@ void INITIALIZE(){
     hWnd = wmInfo.info.win.window;
     MakeWindowTranparent();
 
-    //Start platform scanner thing    
+    //Start platform scanner thing 
+    
     startPlatformScanThread();
 
     createCharacterBones();
-
+    prepareSprites();
     return;
 }
