@@ -52,9 +52,9 @@ std::vector<int> GETSCREENGROUND(int colorME){
     getScreenPixelInfo();
     std::vector<int> cluster{};
     cluster.resize(WIDTH*HEIGHT);
-    for(int index = WIDTH*4; index < 4 * WIDTH * HEIGHT; index += 4){
+    for(int index = WIDTH*4*8; index < 4 * WIDTH * HEIGHT; index += 4){
         if(std::abs((int)bitPointer[index] - (int)bitPointer[index-WIDTH*4]) > colorME && std::abs((int)bitPointer[index+1] - (int)bitPointer[index-WIDTH*4+1]) > colorME && std::abs((int)bitPointer[index+2] - (int)bitPointer[index-WIDTH*4+2]) > colorME)
-            cluster[index/4] = 1;
+            cluster[WIDTH*HEIGHT - index/4 - 1] = 1;
     }
     return cluster;
 }

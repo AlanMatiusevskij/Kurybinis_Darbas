@@ -55,13 +55,13 @@ void createCharacterBones(){
     //-99 nurodo nenaudojamą reikšmę.
     joints[DUBUO] = {-99, -99, false, -99, 1200 ,500};
 
-    length = 80;
+    length = 40;
     angle = 88*pi/180; 
     joints[K_KELIS] = {angle, angle, true, length, cosf(angle)*length + joints[DUBUO].x, joints[DUBUO].y + sinf(angle)*length};
     angle = 92*pi/180;
     joints[D_KELIS] = {angle, angle, false, length, cosf(angle)*length + joints[DUBUO].x, joints[DUBUO].y + sinf(angle)*length};
 
-    length = 32;
+    length = 16;
     angle = 88*pi/180;
     joints[K_PEDA] = {angle, angle, true, length, cosf(angle)*length + joints[K_KELIS].x, joints[K_KELIS].y + sinf(angle)*length};
     angle = 92*pi/180;
@@ -107,14 +107,15 @@ void physics(){
         velY = 0;
     }
     else{
-        velY+=g;
+        velY +=g;
     }
 
     return;
 }
 
 void presentBones(){
-    SDL_SetRenderDrawColor(rend, 100,100,100,255);
+    SDL_SetRenderDrawColor(rend, 255,255,255,255);
+    //SDL_SetRenderDrawColor(rend, 100,100,100,255);
     for(JOINT_STRUCT joint : joints)
         SDL_RenderDrawPoint(rend, joint.x, joint.y);
     SDL_RenderDrawLine(rend, joints[K_PEDA].x, joints[K_PEDA].y, joints[K_KELIS].x, joints[K_KELIS].y);
@@ -137,8 +138,8 @@ std::string collisions(){
     bool nextFoot = false;
     //DISGUSTING, THIS AINT WORKING. IS FLOOR FINDER EVEN WORKING PROPERLY?
     for(int i : feet_index){
-        if(platformPoints.size() > WIDTH*HEIGHT - (round(joints[i].y) *WIDTH+round(joints[i].x) - WIDTH) ){
-            if(platformPoints[WIDTH*HEIGHT - (round(joints[i].y) *WIDTH+round(joints[i].x) - WIDTH)] == 1 && platformPoints[WIDTH*HEIGHT - (round(joints[i].y) *WIDTH+round(joints[i].x) - WIDTH) + 1] == 1 && platformPoints[WIDTH*HEIGHT - (round(joints[i].y) *WIDTH+round(joints[i].x) - WIDTH)-1] == 1){
+        if(platformPoints.size() >= int(joints[i].y + 1)  *WIDTH -joints[i].x + WIDTH|| joints[i].y + 2 >= HEIGHT-1){
+            if(platformPoints[int(joints[i].y + 1) *WIDTH -joints[i].x + WIDTH] == 1 || joints[i].y + 2 >= HEIGHT-1){
                 whichFoot = i;
                 feet++;
             }
@@ -250,18 +251,18 @@ void prepareSprites(){
 }
 
 void applySprites(){
+    int flip;
     //moving right
-    if(velX >= 0){
-        SDL_RenderCopyEx(rend, charSprites[test][test_koja], NULL, &spritePos[test][0], joints[K_KELIS].ANGLE*180/pi - 90, new SDL_Point{86/6, 74/6}, SDL_FLIP_NONE);
-        SDL_RenderCopyEx(rend, charSprites[test][test_koja], NULL, &spritePos[test][1], joints[D_KELIS].ANGLE*180/pi - 90, new SDL_Point{86/6, 74/6}, SDL_FLIP_NONE);
-        SDL_RenderCopyEx(rend, charSprites[test][test_kunelis], NULL, &spritePos[test][2], 0, new SDL_Point{0, 0}, SDL_FLIP_NONE);
-    }
+    if(velX >= 0)
+        flip = 0;
     //moving left
-    if(velX < 0){
-        SDL_RenderCopyEx(rend, charSprites[test][test_koja], NULL, &spritePos[test][0], joints[K_KELIS].ANGLE*180/pi - 90, new SDL_Point{86/6, 74/6}, SDL_FLIP_HORIZONTAL);
-        SDL_RenderCopyEx(rend, charSprites[test][test_koja], NULL, &spritePos[test][1], joints[D_KELIS].ANGLE*180/pi - 90, new SDL_Point{86/6, 74/6}, SDL_FLIP_HORIZONTAL);
-        SDL_RenderCopyEx(rend, charSprites[test][test_kunelis], NULL, &spritePos[test][2], 0, new SDL_Point{0, 0}, SDL_FLIP_HORIZONTAL);
-    }
+    if(velX < 0)
+        flip = 1;
+
+    SDL_RenderCopyEx(rend, charSprites[test][test_koja], NULL, &spritePos[test][0], joints[K_KELIS].ANGLE*180/pi - 90, new SDL_Point{86/6, 74/6}, (SDL_RendererFlip)flip);
+    SDL_RenderCopyEx(rend, charSprites[test][test_kunelis], NULL, &spritePos[test][2], 0, new SDL_Point{0, 0}, (SDL_RendererFlip)flip);
+    SDL_RenderCopyEx(rend, charSprites[test][test_koja], NULL, &spritePos[test][1], joints[D_KELIS].ANGLE*180/pi - 90, new SDL_Point{86/6, 74/6}, (SDL_RendererFlip)flip);
+
     return;
 }
 
@@ -299,7 +300,7 @@ void processCharacter(){
     joints[DUBUO].y += velY;
     updateBones();
 
-    applySprites();
+    //applySprites();
     presentBones();
     debuglines();
     return;
