@@ -300,7 +300,7 @@ void processCharacter(){
     joints[DUBUO].y += velY;
     updateBones();
 
-    //applySprites();
+    applySprites();
     presentBones();
     debuglines();
     return;
