@@ -36,13 +36,21 @@ atsijungti iš git, tai reikia eiti per nustatymus. Windows search:
 credential manager > Windows credentials > Generic credentials. In Generic credentials surasti 'git' ir spausti 'remove'.
 
 pora git komandų:
+
 padarius pakeitimus: git commit -a (viska) arba git add "pakeisti failai", git commit; čia "paruošiami" pakeitimai?
+
 Kad uploadinti į atidarytą branch'ą: git push;
+
 git pull origin main; (gauti pakeitimus origin (atidarytame repo) is 'main' branch); 
+
 git checkout "main" - atidarys main branch;
 
 [branch](https://git-scm.com/docs/git-branch)
+
 [merge](https://git-scm.com/docs/git-merge)
+
 [commit](https://git-scm.com/docs/git-commit)
+
 [fetch](https://git-scm.com/docs/git-fetch)
+
 [checkout](https://git-scm.com/docs/git-checkout)
