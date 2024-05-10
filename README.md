@@ -22,3 +22,14 @@ Kaip paruošti visus failus:
     > //make komanda sukuria programą .exe, o ./main ją tiesiog atidaro
 8) Kai kodas veikia ir norite jį sinchronizuoti su projektu, mygtukų juostoje kairėje spauskite "Source Control" ir "Commit & Push". Patikrinkite ar nėra nesutapimų, gal reikalingas kodas ištrinamas ir gal yra klaidų su kito žmogaus atnaujintu pagrindiniu kodu. Jeigu viskas gerai, patvirtinkite "Pull request" ir ištrinkite "Kurybinis_darbas" aplanką savo kompiuteryje.
 9) "git pull origin main", kad gauti pakeitimus iš 'main' brancho.(jeigu neveikia kažkas, tiesiog ištrinkite aplanką ir pradėkite nuo 6 punkto).
+
+pakeisti/nustatyi git user.name ir user.email:
+
+> git config user.name "manoVardas"
+> git config user.email "manoelpastas"
+
+istrinti:
+> git config (--global) --unset user.email/user.name
+
+atsijungti iš git, tai reikia eiti per nustatymus. Windows search: 
+credential manager > Windows credentials > Generic credentials. In Generic credentials surasti 'git' ir spausti 'remove'.
