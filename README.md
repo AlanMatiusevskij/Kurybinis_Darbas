@@ -21,7 +21,7 @@ Kaip paruošti visus failus:
     >
     > //make komanda sukuria programą .exe, o ./main ją tiesiog atidaro
 8) Kai kodas veikia ir norite jį sinchronizuoti su projektu, mygtukų juostoje kairėje spauskite "Source Control" ir "Commit & Push". Patikrinkite ar nėra nesutapimų, gal reikalingas kodas ištrinamas ir gal yra klaidų su kito žmogaus atnaujintu pagrindiniu kodu. Jeigu viskas gerai, patvirtinkite "Pull request" ir ištrinkite "Kurybinis_darbas" aplanką savo kompiuteryje.
-9) "git pull origin main", kad gauti pakeitimus iš 'main' brancho.(jeigu neveikia kažkas, tiesiog ištrinkite aplanką ir pradėkite nuo 6 punkto).
+9) "git pull origin main", kad gauti pakeitimus iš 'main' brancho.(jeigu neveikia kažkas, tiesiog ištrinkite aplanką ir pradėkite nuo 6 punkto) (čia gali būti bšk scuffed. Reikia paskui sinchronizuoti pakeitimus su atidarytu branchu (pull origin main, kai atidarytas jūsų keičiamas branch'as. Dėl viso pikto, savo pakeitimus gal išsaugokite).
 
 pakeisti/nustatyi git user.name ir user.email:
 
