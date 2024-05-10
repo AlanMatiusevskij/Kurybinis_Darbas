@@ -38,7 +38,6 @@ enum spriteIndexes{
 struct spriteInfo{
     SDL_Surface* img_data;
     SDL_Texture* img;
-    SDL_Rect dimensions;//istrink, jeigu eina su New sDl rect
 };
 int feet_index[2] = {K_PEDA, D_PEDA};
 int destinationME = 5;
@@ -46,7 +45,7 @@ double g = 0.05;
 //sprites[kategorijos indeksas][kategorijoje esancios nuotraukos indeksas]
 std::vector<std::vector<spriteInfo>> sprites;
 std::vector<JOINT_STRUCT> joints;
-//std::vector<SDL_Rect> spritePositions;
+std::vector<SDL_Rect> spritePositions;
 
 std::string collisions();
 void updateBones();
@@ -61,6 +60,7 @@ void createCharacterBones(){
     //-99 nurodo nenaudojamą reikšmę.
     joints[DUBUO] = {-99, -99, false, -99, (double)charStartingPos.x, (double)charStartingPos.y};
 
+    angle = 88*pi/180;
     joints[K_KELIS] = {angle, angle, true, kelisIkiKlubuIlgis, cosf(angle)*kelisIkiKlubuIlgis + joints[DUBUO].x, joints[DUBUO].y + sinf(angle)*kelisIkiKlubuIlgis};
     angle = 92*pi/180;
     joints[D_KELIS] = {angle, angle, false, kelisIkiKlubuIlgis, cosf(angle)*kelisIkiKlubuIlgis + joints[DUBUO].x, joints[DUBUO].y + sinf(angle)*kelisIkiKlubuIlgis};
@@ -90,11 +90,6 @@ void updateBones(){
     org = D_PEDA; dest = D_KELIS;
     joints[org].x = cosf(joints[org].ANGLE)*joints[org].length + joints[dest].x;
     joints[org].y = joints[dest].y + sinf(joints[org].ANGLE)*joints[org].length;
-
-    // spritePos[0][0].x = joints[K_KELIS].x - spritePos[0][0].w/2; spritePos[0][0].y = joints[K_KELIS].y+5;
-    // spritePos[0][1].x = joints[D_KELIS].x- spritePos[0][1].w/2; spritePos[0][1].y = joints[D_KELIS].y+5;
-    // spritePos[0][2].x = joints[DUBUO].x- spritePos[0][2].w/2; spritePos[0][2].y = joints[DUBUO].y;
-
     return;
 }
 
@@ -236,41 +231,40 @@ void animate(){
 }
 
 void prepareSprites(){
-    SDL_Surface* tmpSurfc;
+    SDL_Surface* tmpSurfc{};
+    spritePositions.resize(JOINT_COUNT);
     sprites.resize(totalSpriteCategoryNumb);
     sprites[category_test].resize(categoryTest_SpriteNumb);
 
     tmpSurfc = SDL_LoadBMP("./assets/images/test/kojele.bmp");
     sprites[category_test][test_koja].img_data = tmpSurfc;
-    sprites[category_test][test_koja].dimensions = {0, 0, tmpSurfc->w/kojuDydis, tmpSurfc->h/kojuDydis};
     sprites[category_test][test_koja].img = SDL_CreateTextureFromSurface(rend, tmpSurfc);
-    SDL_FreeSurface(tmpSurfc); //free memory, kadangi vis tapatį variable naudojam, neturėtų būti memory leak, bet gali nutikti somehow vistiek 
 
+    SDL_FreeSurface(tmpSurfc); //free memory, kadangi vis tapatį variable naudojam, neturėtų būti memory leak, bet gali nutikti somehow vistiek 
     tmpSurfc = SDL_LoadBMP("./assets/images/test/kunelis.bmp");
-    sprites[category_test][test_koja].img_data = tmpSurfc;
-    sprites[category_test][test_kunelis].dimensions = {0,0, tmpSurfc->w/kunelioDydis, tmpSurfc->h/kunelioDydis};
+    sprites[category_test][test_kunelis].img_data = tmpSurfc;
     sprites[category_test][test_kunelis].img = SDL_CreateTextureFromSurface(rend, tmpSurfc);
+    return;
+}
+
+void rendercopyExShortcut(spriteInfo& sprite_info, int dydis, int joint_index, int to_flip){
+    spritePositions[joint_index] = {(int)joints[joint_index].x - sprite_info.img_data->w/(2*dydis), (int)joints[joint_index].y, sprite_info.img_data->w/dydis, sprite_info.img_data->h/dydis};
+    SDL_RenderCopyEx(rend, sprite_info.img, NULL, &spritePositions[joint_index], joints[joint_index].ANGLE*180/pi - 90, new SDL_Point{sprite_info.img_data->w/(2*dydis), 0}, (SDL_RendererFlip)to_flip);
     return;
 }
 
 void applySprites(){
     int flip;
-    spriteInfo* pointer;
-    //moving right - do NOT flip (based on provided sprites)
+    //moving right - do NOT flip (visi sprites į dešinę pusę pasisukę turi būti)
     if(velX >= 0)
         flip = 0;
     //moving left - DO flip
     if(velX < 0)
         flip = 1;
 
-    pointer = &sprites[category_test][test_koja];
-    SDL_RenderCopyEx(rend, pointer->img, NULL, new SDL_Rect{int(joints[K_KELIS].x - pointer->img_data->w/2), (int)joints[K_KELIS].y,pointer->img_data->w, pointer->img_data->h}, joints[K_KELIS].ANGLE*180/pi - 90, new SDL_Point{pointer->img_data->w/2, 0}, (SDL_RendererFlip)flip);
-    
-    pointer = &sprites[category_test][test_kunelis];
-    SDL_RenderCopyEx(rend, pointer->img, NULL, new SDL_Rect{int(joints[DUBUO].x - pointer->img_data->w/2), (int)joints[DUBUO].y, pointer->img_data->w, pointer->img_data->h}, 0, new SDL_Point{0, 0}, (SDL_RendererFlip)flip);
-    
-    pointer = &sprites[category_test][test_koja];
-    SDL_RenderCopyEx(rend, pointer->img, NULL, {int(joints[D_KELIS].x - pointer->img_data->w/2), (int)joints[D_KELIS].y, pointer->img_data->w, pointer->img_data->h}, joints[D_KELIS].ANGLE*180/pi - 90, new SDL_Point{pointer->img_data->w/2, 0}, (SDL_RendererFlip)flip);
+    rendercopyExShortcut(sprites[category_test][test_koja], kojuDydis, K_KELIS, flip);
+    rendercopyExShortcut(sprites[category_test][test_kunelis], kunelioDydis, DUBUO, flip);
+    rendercopyExShortcut(sprites[category_test][test_koja], kojuDydis, D_KELIS, flip);
 
     return;
 }

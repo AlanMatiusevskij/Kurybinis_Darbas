@@ -49,8 +49,6 @@ void INITIALIZE(){
     hWnd = wmInfo.info.win.window;
     MakeWindowTranparent();
 
-    //Start platform scanner thing 
-    
     startPlatformScanThread();
 
     createCharacterBones();

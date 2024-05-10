@@ -43,13 +43,13 @@ HWND hWnd;
 int mx, my;
 double velY = 0, velX = 0; //velocity
 //Kai kurie veikėjo duomenys
-pixel_struct charStartingPos = {1000,600};
+pixel_struct charStartingPos = {400,100};
 enum {
     kelisIkiKlubuIlgis = 40,
     kelisIkiPeduIlgis = 16,
     //NE DYDIS O KIEK KARTU MAZESNIS UZ PACIOS NUOTRAUKOS DYDI
     kojuDydis = 3,
-    kunelioDydis = 7
+    kunelioDydis = 5
 };
 
 //Visi platformų taškai
