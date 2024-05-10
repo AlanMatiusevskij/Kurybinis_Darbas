@@ -26,6 +26,7 @@ Kaip paruošti visus failus:
 pakeisti/nustatyi git user.name ir user.email:
 
 > git config user.name "manoVardas"
+> 
 > git config user.email "manoelpastas"
 
 istrinti:
