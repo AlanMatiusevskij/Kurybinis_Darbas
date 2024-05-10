@@ -3,7 +3,7 @@
         Čia bus išvardijamos visos bibliotekos, variables ir funkcijos, kurios gali būti reikalingos skirtingiems failams.
 */
 #pragma once
-#define NOMINMAX //<_ cmath min ir max overwritina windows.h be šito
+#define NOMINMAX //<_ windows.h overwritina cmath min ir max be šito
 #include<Windows.h>
 
 #include<SDL2/SDL.h>
@@ -44,10 +44,11 @@ int mx, my;
 double velY = 0, velX = 0; //velocity
 //Kai kurie veikėjo duomenys
 pixel_struct charStartingPos = {400,100};
-enum {
-    kelisIkiKlubuIlgis = 40,
-    kelisIkiPeduIlgis = 16,
-    //NE DYDIS O KIEK KARTU MAZESNIS UZ PACIOS NUOTRAUKOS DYDI
+enum kaulu_ilgiai{
+    calf = 16,
+    thigh = 40
+};
+enum sprite_x_kartu_sumazintas_dydis{
     kojuDydis = 3,
     kunelioDydis = 5
 };
@@ -62,9 +63,9 @@ std::vector<int> GETSCREENGROUND(int colorME);
 bool MakeWindowTranparent();
 void createCharacterBones();
 void startPlatformScanThread();
-void presentBones();
 void processCharacter();
 void altFunc();
+double rad(double degrees);
 void prepareSprites();
 //some useful stuff:
     // std::cout << ("\033[31mThis is red font.\033[0m") << "\n";
