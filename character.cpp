@@ -307,4 +307,3 @@ void processCharacter(){
     debuglines();
     return;
 }
-//komentaras;
