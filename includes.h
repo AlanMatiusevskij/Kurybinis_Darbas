@@ -33,6 +33,9 @@ int WIDTH = GetSystemMetrics(SM_CXSCREEN), HEIGHT = GetSystemMetrics(SM_CYSCREEN
 SDL_Color COLOR_TO_IGNORE = {255,0,255,255};
 //koks didžiausias spalvų skirtumas leistinas prieš nuskaitant naują platformą
 int platformScanColorME = 5;
+//Variable laiko skaičiavimui
+std::chrono::steady_clock::time_point now;
+std::chrono::duration<double> timeDifference;
 //Pagrindiniai SDL variables
 SDL_Window* wind;
 SDL_Renderer *rend;
@@ -51,6 +54,10 @@ enum kaulu_ilgiai{
 enum sprite_x_kartu_sumazintas_dydis{
     kojuDydis = 3,
     kunelioDydis = 5
+};
+enum{
+    dideja = 1,
+    mazeja = -1
 };
 
 //Visi platformų taškai
@@ -79,6 +86,6 @@ void prepareSprites();
     std::chrono::steady_clock::time_point then;
     now = std::chrono::steady_clock::now();
     then = std::chrono::steady_clock::now();
-    std::chrono::duration<double> timespan = std::chrono::duration_cast<std::chrono::seconds>(then-now);
-    std::cout << "took to complete: " << timespan.count();
+    std::chrono::duration<double> timeDifference = std::chrono::duration_cast<std::chrono::seconds>(then-now);
+    std::cout << "took to complete: " << timeDifference.count();
 */

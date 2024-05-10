@@ -83,7 +83,8 @@
         "variant": "cpp",
         "condition_variable": "cpp",
         "semaphore": "cpp",
-        "fstream": "cpp"
+        "fstream": "cpp",
+        "text_encoding": "cpp"
     },
     "C_Cpp.default.compilerPath": "C:\\msys64\\mingw32\\bin\\g++.exe"
 }

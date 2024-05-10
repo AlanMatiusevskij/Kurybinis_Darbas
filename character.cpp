@@ -17,8 +17,11 @@ struct JOINT_STRUCT{
     double maxAngle;
     //kampas TARP kaulų, kurį stengiasi palaikyti; RADS
     double defaultAngle;
-    //y kuria puse suktis
-    bool rotDir;
+    /**
+     * @param dideja tai kampas dideja; 1
+     * @param mazeja tai kampas mazeja; -1
+    */
+    int rotDir;
     //kaulo ilgis
     double length;
     //taškas, nuo kurio "ištiesiamas" kaulas; Matematinės funkcijos visada palaiko juos sujungtus.
@@ -48,10 +51,18 @@ struct spriteInfo{
 int feet_index[2] = {K_PEDA, D_PEDA};
 int destinationME = 5;
 double g = 0.05;
-//sprites[kategorijos indeksas][kategorijoje esancios nuotraukos indeksas]
+/*sprites[kategorijos indeksas][kategorijoje esancios nuotraukos indeksas]*/
 std::vector<std::vector<spriteInfo>> sprites;
 std::vector<JOINT_STRUCT> joints;
 std::vector<SDL_Rect> spritePositions;
+
+struct {
+    // @param value is the happiness level ranging from 0 to 100; 0 is sad, 30 is neutral, 50 is happy and 70 cheerful  (cheerful > happy)
+    double value = 30;
+     // @param last tai kada paskutinį kartą buvo pakeistas "value";
+    std::chrono::steady_clock::time_point last;
+
+}emotions;
 
 std::string collisions();
 void updateBones();
@@ -63,9 +74,9 @@ void updateBones();
   * @param minAngle tai MAŽIAUSIAS pasisukimo kampas.
   * @param maxAngle tai DIDŽIAUSIAS pasisukimo kampas.
   * @param length tai kaulo ilgis.
-  * @param rot_direction tai nusako į kurią pusę turės kaulai pradėti judėti, kai prasideda judėjimas. 'true' kampas didėja, o 'false' mažėja.
+  * @param rot_direction tai nusako į kurią pusę turės kaulai pradėti judėti, kai prasideda judėjimas. '1' kampas didėja, o '-1' mažėja.
 */
-void actuallyCreateCharacterBones(int indeksas, double baseAngle, double minAngle, double maxAngle, kaulu_ilgiai length, bool rot_direction){
+void actuallyCreateCharacterBones(int indeksas, double baseAngle, double minAngle, double maxAngle, kaulu_ilgiai length, int rot_direction){
     joints[indeksas] = {baseAngle, minAngle, maxAngle, baseAngle, rot_direction, (double)length, 0, 0};
     return;
 }
@@ -77,10 +88,10 @@ void createCharacterBones(){
     joints.resize(JOINT_COUNT);
     joints[DUBUO] = {0, 0, 0, 0, 0, 0, (double)charStartingPos.x, (double)charStartingPos.y};
 
-    actuallyCreateCharacterBones(K_KELIS, rad(88), rad(78), rad(180-78), thigh, true);
-    actuallyCreateCharacterBones(D_KELIS, rad(92), rad(78), rad(180-78), thigh, false);
-    actuallyCreateCharacterBones(K_PEDA, rad(88), rad(90), rad(180-90), calf, true);
-    actuallyCreateCharacterBones(D_PEDA, rad(92), rad(90), rad(180-90), calf, false);
+    actuallyCreateCharacterBones(K_KELIS, rad(88), rad(78), rad(180-78), thigh, dideja);
+    actuallyCreateCharacterBones(D_KELIS, rad(92), rad(78), rad(180-78), thigh, mazeja);
+    actuallyCreateCharacterBones(K_PEDA, rad(88), rad(90), rad(180-90), calf, dideja);
+    actuallyCreateCharacterBones(D_PEDA, rad(92), rad(90), rad(180-90), calf, mazeja);
 
     updateBones();
     return;
@@ -156,15 +167,15 @@ void resetPos(){
         }
     }
     for(int i = 0; i < 5; i++) begin[i] = true;
-    joints[K_KELIS].rotDir = true;
-    joints[D_KELIS].rotDir = false;
-    joints[K_PEDA].rotDir = true;
-    joints[D_PEDA].rotDir = false;
+    joints[K_KELIS].rotDir = dideja;
+    joints[D_KELIS].rotDir = mazeja;
+    joints[K_PEDA].rotDir = dideja;
+    joints[D_PEDA].rotDir = mazeja;
     if(count == 4) allowedToChangeState = true;
     return;
 }
 
-//nepatinka šitas
+bool canChangeDirection = true;
 void animate(){
     //Moving
     if(velX!=0){
@@ -172,36 +183,54 @@ void animate(){
         double speed = velX, A;
         int indx[2] = {D_KELIS, K_KELIS};
         for(int i : indx){
-            if(joints[i].rotDir){
-                joints[i].ANGLE -= speed/45;
-                if(velX>0) A = joints[i].minAngle;
-                else A =  joints[i].maxAngle;
-                if(velX*joints[i].ANGLE <= rad(A) * velX) joints[i].rotDir = false;
+            if(velX>0) A = joints[i].minAngle;
+            else A =  joints[i].maxAngle;
+            joints[i].ANGLE += speed*joints[i].rotDir/45;
+            if(velX*joints[i].ANGLE <= rad(A) * velX && canChangeDirection){
+                joints[i].rotDir *=-1;
+                canChangeDirection = false;
             }
-            else{
-                joints[i].ANGLE+=speed/45;
-                if(velX>0) A = joints[i].minAngle;
-                else A = joints[i].maxAngle;
-                if(velX*joints[i].ANGLE >= rad(A)*velX) joints[i].rotDir = true;
-            }
+            else if(joints[i].ANGLE > rad(A)) canChangeDirection = true;
+
+            // if(joints[i].rotDir){
+            //     joints[i].ANGLE -= speed/45;
+            //     if(velX>0) A = joints[i].minAngle;
+            //     else A =  joints[i].maxAngle;
+            //     if(velX*joints[i].ANGLE <= rad(A) * velX) joints[i].rotDir = false;
+            // }
+            // else{
+            //     joints[i].ANGLE+=speed/45;
+            //     if(velX>0) A = joints[i].minAngle;
+            //     else A = joints[i].maxAngle;
+            //     if(velX*joints[i].ANGLE >= rad(A)*velX) joints[i].rotDir = true;
+            // }
         }
         indx[0] = D_PEDA;
         indx[1] = K_PEDA;
         for(int i : indx){
             if(std::abs(joints[i+1].ANGLE - pi_2) < 0.01) begin[i] = true;
-            if(joints[i].rotDir){
-                begin[i] = false;
-                joints[i].ANGLE -= speed/32;
-                if(velX>0) A = joints[i].minAngle;
-                else A = joints[i].maxAngle;
-                if(velX*joints[i].ANGLE <= rad(A)*velX) joints[i].rotDir = false;
+            if(velX>0) A = joints[i].minAngle;
+            else A =  joints[i].maxAngle;
+            joints[i].ANGLE += speed*joints[i].rotDir/32;
+            if(joints[i].ANGLE <= rad(A) && canChangeDirection){
+                joints[i].rotDir *=-1;
+                canChangeDirection = false;
             }
-            else if(begin[i]){
-                joints[i].ANGLE+=speed/32;
-                if(velX>0) A = joints[i].minAngle;
-                else A = joints[i].maxAngle;
-                if(velX*joints[i].ANGLE >= rad(A)*velX) joints[i].rotDir = true;
-            }
+            else if(velX*joints[i].ANGLE > rad(A)) canChangeDirection = true;
+
+            // if(joints[i].rotDir){
+            //     begin[i] = false;
+            //     joints[i].ANGLE -= speed/32;
+            //     if(velX>0) A = joints[i].minAngle;
+            //     else A = joints[i].maxAngle;
+            //     if(velX*joints[i].ANGLE <= rad(A)*velX) joints[i].rotDir = false;
+            // }
+            // else if(begin[i]){
+            //     joints[i].ANGLE+=speed/32;
+            //     if(velX>0) A = joints[i].minAngle;
+            //     else A = joints[i].maxAngle;
+            //     if(velX*joints[i].ANGLE >= rad(A)*velX) joints[i].rotDir = true;
+            // }
         }
     }
     //Idle
@@ -290,11 +319,44 @@ void debuglines(){
     SDL_RenderDrawLine(rend, joints[DUBUO].x, joints[DUBUO].y, joints[D_KELIS].x, joints[D_KELIS].y);
     return;
 }
+/**
+ * Tikrina, ką naudotojas daro su veikėju.
+*/
+std::string isUserInteractingWithCharacter(){
+
+    return "-";
+}
+
+/**
+ * function that deals with all emotion and action (do something when something is (not) happening).
+*/
+void emotionAndActionController(){
+    //Change values
+    now = std::chrono::steady_clock::now();
+    timeDifference = std::chrono::duration_cast<std::chrono::minutes>(emotions.last-now);
+    std::string output = isUserInteractingWithCharacter();
+    if(output != "-"){
+        //user is doing smt to petto; Affect values and petto's state based on what exactly is the user doing.
+    }
+    else if(timeDifference.count() >= 10){
+        //praejo x min nuo last activity;
+        emotions.value -= 1;
+        emotions.value = std::max(emotions.value, (double)0);
+        emotions.last = std::chrono::steady_clock::now();
+    }
+
+    //Petto decides how to act
+
+    //Make the changes
+    return;
+}
 
 /**
  * Calls all functions for the character to work properly.
 */
 void processCharacter(){
+    emotionAndActionController();
+
     physics();
     pathfinding();
     animate();
