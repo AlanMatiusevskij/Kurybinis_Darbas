@@ -59,13 +59,23 @@ std::vector<SDL_Rect> spritePositions;
 struct {
     // @param value is the happiness level ranging from 0 to 100; 0 is sad, 30 is neutral, 50 is happy and 70 cheerful  (cheerful > happy)
     double value = 30;
-     // @param last tai kada paskutinį kartą buvo pakeistas "value";
+    // @param last tai kada paskutinį kartą buvo pakeistas "value";
     std::chrono::steady_clock::time_point last;
+    // @param prassed tai kada buvo paspausta ant petto;
+    std::chrono::steady_clock::time_point pressed;
 
 }emotions;
 
+enum time_units{
+    microseconds = 0,
+    milliseconds = 1,
+    seconds = 2,
+    minutes = 3,
+};
+
 std::string collisions();
 void updateBones();
+std::chrono::steady_clock::time_point currentTime();
 
 /**
  * Called by 'createCharacterBones()'
@@ -315,11 +325,25 @@ void debuglines(){
     SDL_RenderDrawLine(rend, joints[DUBUO].x, joints[DUBUO].y, joints[D_KELIS].x, joints[D_KELIS].y);
     return;
 }
+
 /**
  * Tikrina, ką naudotojas daro su veikėju.
 */
 std::string isUserInteractingWithCharacter(){
+    //Its only once, right?
+    if(evt.button.button == SDL_BUTTON_LEFT){
+        switch(evt.type){
 
+            case SDL_MOUSEBUTTONDOWN:
+                emotions.pressed = currentTime();
+            break;
+            
+            case SDL_MOUSEBUTTONUP:
+                if(timeDiff(seconds, emotions.pressed, currentTime()) <= 0.5)
+                return "skriaudzia";    
+        }
+    }
+    
     return "-";
 }
 
@@ -327,25 +351,53 @@ std::string isUserInteractingWithCharacter(){
  * function that deals with all emotion and action (do something when something is (not) happening).
 */
 void emotionAndActionController(){
-    //Change values
-    now = std::chrono::steady_clock::now();
-    timeDifference = std::chrono::duration_cast<std::chrono::seconds>(now-emotions.last);
     std::string output = isUserInteractingWithCharacter();
+
+    //petto's emotion values are affected
     if(output != "-"){
-        //user is doing smt to petto; Affect values and petto's state based on what exactly is the user doing.
+        if(output == "glosto"){
+
+        }
+        
+        if(output == "skriaudzia"){
+
+        }
     }
-    else if(timeDifference.count() >= 10){
+    else if(timeDiff(minutes, emotions.last, currentTime()) >= 10){
         //praejo x min nuo last activity;
         emotions.value -= 1;
         emotions.value = std::max(emotions.value, (double)0);
 
-        emotions.last = std::chrono::steady_clock::now();
+        emotions.last = currentTime();
     }
-    //Petto decides how to act
 
-    //Make the changes
+    //Petto decides how to act (how to mvoe, which sprite to use, etc)
+
     return;
 }
+
+std::chrono::steady_clock::time_point currentTime(){
+    return std::chrono::steady_clock::now();
+}
+
+double timeDiff(time_units unit, std::chrono::steady_clock::time_point last_time, std::chrono::steady_clock::time_point current_time){
+    switch(unit){
+        case microseconds:
+        return std::chrono::duration_cast<std::chrono::microseconds>(current_time-last_time).count();
+        
+        case milliseconds:
+        return std::chrono::duration_cast<std::chrono::milliseconds>(current_time-last_time).count();
+
+        case seconds:
+        return std::chrono::duration_cast<std::chrono::seconds>(current_time-last_time).count();
+
+        case minutes:
+        return std::chrono::duration_cast<std::chrono::minutes>(current_time-last_time).count();
+    }
+    std::cout << "WRONG TIME UNIT (incorrect numb or function is outdated)\n";
+    return -1;
+}
+
 
 /**
  * Calls all functions for the character to work properly.
