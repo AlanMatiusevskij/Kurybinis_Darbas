@@ -16,6 +16,8 @@ HDC hdc, hdcMemory;
 DWORD purposeIsToRemoveWarning;
 BITMAPINFO bitmap;
 bool altLMBPress = false;
+bool altRMBPress = false;
+bool textInputReady = false;
 
 /**
  * Gets various information about the screen bitmap and saves it to an array ("bitpointer");
@@ -43,6 +45,12 @@ void getScreenPixelInfo(){
     //without 2 of 'delete' and 1 of 'release' memory increases +~30mb/s until program crashes
     return;
 }
+/**
+ * Nupiešia ekrane langą, į kurį galima rašyti. 
+*/
+void textInput(){
+
+}
 
 /**
  *  Gets screen-relative pixel color information and, based on sharp color rgb value change +- color Margin of Error.
@@ -68,16 +76,51 @@ bool MakeWindowTranparent(){
     return SetLayeredWindowAttributes(hWnd, colorKey, 0, LWA_COLORKEY);
 }
 
+// ne 0 - pakeltas
+// 0 - nuspaustas
 void altFunc(){
+    //just a circle?
+    SDL_SetRenderDrawColor(rend, 255, 0, 0, 255);
+    SDL_RenderDrawPoint(rend, mx, my); SDL_RenderDrawPoint(rend, mx + 1, my);SDL_RenderDrawPoint(rend, mx-1, my);
+    SDL_RenderDrawPoint(rend, mx, my + 1); SDL_RenderDrawPoint(rend, mx, my -1);
+
     if(GetAsyncKeyState(VK_LBUTTON) == 0 && altLMBPress) altLMBPress = false;
     if(GetAsyncKeyState(VK_LBUTTON) != 0 && !altLMBPress){
         altLMBPress = true;
         togoPoints.push_back({mx, -1});
     }
+
+    if(GetAsyncKeyState(VK_RBUTTON) != 0 && !altRMBPress) textRect = {mx, my, 0, 0};
+    if(GetAsyncKeyState(VK_RBUTTON) != 0){
+        textInputReady = false;
+        textRect = {textRect.x, textRect.y, mx - textRect.x, my - textRect.y};
+        altRMBPress = true;
+        SDL_RenderDrawRect(rend, &textRect);
+    }
+    else{
+        altRMBPress = false;
+        if(std::abs(textRect.w) >= 10 && std::abs(textRect.h) >= 10)
+            textInputReady = true;
+    }
     return;
 }
 
-//use this only for debug(or curiosity), but do not use it with threads at the same time!
+/**
+ * A function that is called when a text input box is active and reads keyboard input.
+*/
+SDL_TextInputEvent text;
+void textInputFunctionallity(){
+    SDL_SetRenderDrawColor(rend, 227, 161, 75, 255);
+    SDL_RenderDrawRect(rend, &textRect);
+    text.timestamp = SDL_GetTicks();
+    std::cout << (int)evt.text.text << " "; //the hell?
+    //https://wiki.libsdl.org/SDL2/SDL_TextEditingEvent
+    //https://wiki.libsdl.org/SDL2/SDL_TextInputEvent
+
+    return;
+}
+
+//use this only for debug(or curiosity), but it wont work with scanning thread at the same time!
 // void displayFloors(){
 //     SDL_SetRenderDrawColor(rend, COLOR_TO_IGNORE.r, COLOR_TO_IGNORE.g, COLOR_TO_IGNORE.b, COLOR_TO_IGNORE.a);
 //     SDL_RenderClear(rend);

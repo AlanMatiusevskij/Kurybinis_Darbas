@@ -1,8 +1,5 @@
 #include"includes.h"
 /*
-    @AlanMatiusevskij
-    @Gantzomara
-    įdomu ką šitie daro
     Apie:
         Visos funkcijos susijusios su veikėju. Variables laikome 'includes.h' faile, nes juos gali reikėti kitoms funkcijoms keisti
     Bugs:
@@ -76,6 +73,7 @@ enum time_units{
 std::string collisions();
 void updateBones();
 std::chrono::steady_clock::time_point currentTime();
+double timeDiff(time_units unit, std::chrono::steady_clock::time_point last_time, std::chrono::steady_clock::time_point current_time);
 
 /**
  * Called by 'createCharacterBones()'
@@ -100,8 +98,8 @@ void createCharacterBones(){
 
     actuallyCreateCharacterBones(K_KELIS, rad(88), rad(78), rad(180-78), thigh, dideja);
     actuallyCreateCharacterBones(D_KELIS, rad(92), rad(78), rad(180-78), thigh, mazeja);
-    actuallyCreateCharacterBones(K_PEDA, rad(88), rad(90), rad(180-90), calf, dideja);
-    actuallyCreateCharacterBones(D_PEDA, rad(92), rad(90), rad(180-90), calf, mazeja);
+    actuallyCreateCharacterBones(K_PEDA, rad(88), rad(90), rad(180-60), calf, dideja);
+    actuallyCreateCharacterBones(D_PEDA, rad(92), rad(90), rad(180-60), calf, mazeja);
 
     updateBones();
     return;
@@ -142,8 +140,8 @@ void physics(){
 */
 std::string collisions(){
     for(int i : feet_index){
-        if(platformPoints.size() >= int(joints[i].y + 1)  *WIDTH -joints[i].x + WIDTH || joints[i].y + 2 >= HEIGHT-1){
-            if(platformPoints[int(joints[i].y + 1) *WIDTH -joints[i].x + WIDTH] == 1 || joints[i].y + 2 >= HEIGHT-1){
+        if(platformPoints.size() >= int(joints[DUBUO].y + 1) * WIDTH - joints[DUBUO].x + ground*WIDTH || joints[i].y + 2 >= HEIGHT-1){
+            if(platformPoints[int(joints[DUBUO].y + 1) *WIDTH -joints[DUBUO].x + ground*WIDTH ] == 1 || joints[i].y + 2 >= HEIGHT-1){
                 return "KOJOS";
             }
         }
@@ -190,53 +188,26 @@ void animate(){
     if(velX!=0){
         allowedToChangeState = false;
         double speed = velX;
+        int direction = velX/(std::abs(velX));
         int indx[2] = {D_KELIS, K_KELIS};
         for(int i : indx){
-            joints[i].ANGLE += speed*joints[i].rotDir/45;
-            if(joints[i].ANGLE > joints[i].maxAngle) joints[i].rotDir = -1;
+            if(joints[i].ANGLE > joints[i].maxAngle ) joints[i].rotDir = -1;
             if(joints[i].ANGLE <= joints[i].minAngle) joints[i].rotDir = 1;
-
-
-            // if(joints[i].rotDir){
-            //     joints[i].ANGLE -= speed/45;
-            //     if(velX>0) A = joints[i].minAngle;
-            //     else A =  joints[i].maxAngle;
-            //     if(velX*joints[i].ANGLE <= rad(A) * velX) joints[i].rotDir = false;
-            // }
-            // else{
-            //     joints[i].ANGLE+=speed/45;
-            //     if(velX>0) A = joints[i].minAngle;
-            //     else A = joints[i].maxAngle;
-            //     if(velX*joints[i].ANGLE >= rad(A)*velX) joints[i].rotDir = true;
-            // }
+            joints[i].ANGLE += speed*joints[i].rotDir/45 * direction;
         }
         indx[0] = D_PEDA;
         indx[1] = K_PEDA;
+
+        //somewhere multiply by direction;
         for(int i : indx){
-            if(std::abs(joints[i+1].ANGLE - rad(70)) < 0.01) begin[i] = true;
-            if(joints[i].rotDir == 1 && begin[i] || joints[i].rotDir == -1) joints[i].ANGLE += speed*joints[i].rotDir/32;
+            if(joints[i+1].ANGLE < pi_2) begin[i] = true;
             if(joints[i].ANGLE > joints[i].maxAngle){
-                joints[i].rotDir = 1;
-            }
-            if(joints[i].ANGLE <= joints[i].minAngle){
-                joints[i].rotDir = -1;
                 begin[i] = false;
-
+                joints[i].ANGLE -= rad(speed);
+                joints[i].rotDir = -1;
             }
-
-            // if(joints[i].rotDir){
-            //     begin[i] = false;
-            //     joints[i].ANGLE -= speed/32;
-            //     if(velX>0) A = joints[i].minAngle;
-            //     else A = joints[i].maxAngle;
-            //     if(velX*joints[i].ANGLE <= rad(A)*velX) joints[i].rotDir = false;
-            // }
-            // else if(begin[i]){
-            //     joints[i].ANGLE+=speed/32;
-            //     if(velX>0) A = joints[i].minAngle;
-            //     else A = joints[i].maxAngle;
-            //     if(velX*joints[i].ANGLE >= rad(A)*velX) joints[i].rotDir = true;
-            // }
+            if(joints[i].ANGLE <= joints[i].minAngle) joints[i].rotDir = 1;
+            if(begin[i] && joints[i].rotDir == -1 || joints[i].rotDir == 1)  joints[i].ANGLE += speed*joints[i].rotDir/30;
         }
     }
     //Idle
@@ -329,20 +300,26 @@ void debuglines(){
 /**
  * Tikrina, ką naudotojas daro su veikėju.
 */
+bool clicked = false;
 std::string isUserInteractingWithCharacter(){
     //Its only once, right?
+    //Kol kas sdl nustato paspaudima, tik kai ant pacios programos paspaudziama - kol kas tai tik petto!; Gali glostyti kai net neglosto !  
     if(evt.button.button == SDL_BUTTON_LEFT){
         switch(evt.type){
-
             case SDL_MOUSEBUTTONDOWN:
+                clicked = true;
                 emotions.pressed = currentTime();
             break;
             
             case SDL_MOUSEBUTTONUP:
-                if(timeDiff(seconds, emotions.pressed, currentTime()) <= 0.5)
+                clicked = false;
+                if(timeDiff(milliseconds, emotions.pressed, currentTime()) <= 200)
                 return "skriaudzia";    
         }
     }
+
+    if(clicked && timeDiff(milliseconds, emotions.pressed, currentTime()) > 200)
+        return "glosto";
     
     return "-";
 }
@@ -356,20 +333,23 @@ void emotionAndActionController(){
     //petto's emotion values are affected
     if(output != "-"){
         if(output == "glosto"){
-
+            emotions.value +=0.01;
         }
         
         if(output == "skriaudzia"){
-
+            emotions.value -=2;
         }
     }
     else if(timeDiff(minutes, emotions.last, currentTime()) >= 10){
         //praejo x min nuo last activity;
         emotions.value -= 1;
-        emotions.value = std::max(emotions.value, (double)0);
 
         emotions.last = currentTime();
     }
+
+    //Skalės ribos
+    emotions.value = std::max(emotions.value, (double)0);
+    emotions.value = std::min(emotions.value, (double)100);
 
     //Petto decides how to act (how to mvoe, which sprite to use, etc)
 
@@ -380,24 +360,27 @@ std::chrono::steady_clock::time_point currentTime(){
     return std::chrono::steady_clock::now();
 }
 
+/**
+ * Funckija iššreiškianti praėjusį laiką tarp 2 skirtingų datų. Datos turi būti variables 'std::chrono::steady_clock::time_point'.
+ * @param unit tai kokiu laiko vienetu gražinti skaičių.
+ * @param last_time tai time_point paskutinio išsaugoto laiko.
+ * @param current_time tai time_point dabartinio laiko.
+ * @return Grąžina praėjusį laiką tarp 2 time_points tam tikru laiko vienetu.
+*/
 double timeDiff(time_units unit, std::chrono::steady_clock::time_point last_time, std::chrono::steady_clock::time_point current_time){
     switch(unit){
         case microseconds:
-        return std::chrono::duration_cast<std::chrono::microseconds>(current_time-last_time).count();
-        
+            return std::chrono::duration_cast<std::chrono::microseconds>(current_time-last_time).count();
         case milliseconds:
-        return std::chrono::duration_cast<std::chrono::milliseconds>(current_time-last_time).count();
-
+            return std::chrono::duration_cast<std::chrono::milliseconds>(current_time-last_time).count();
         case seconds:
-        return std::chrono::duration_cast<std::chrono::seconds>(current_time-last_time).count();
-
+            return std::chrono::duration_cast<std::chrono::seconds>(current_time-last_time).count();
         case minutes:
-        return std::chrono::duration_cast<std::chrono::minutes>(current_time-last_time).count();
+            return std::chrono::duration_cast<std::chrono::minutes>(current_time-last_time).count();
     }
-    std::cout << "WRONG TIME UNIT (incorrect numb or function is outdated)\n";
+    std::cout << "WRONG TIME UNIT (incorrect index or function is outdated)\n";
     return -1;
 }
-
 
 /**
  * Calls all functions for the character to work properly.
@@ -414,6 +397,6 @@ void processCharacter(){
     updateBones();
 
     applySprites();
-    debuglines();
+    //debuglines();
     return;
 }

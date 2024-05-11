@@ -26,7 +26,7 @@ struct pixel_struct{
 const std::string WIND_TITLE{"Petto - your personal delight"};
 const double pi = 3.14159265359, pix2 = 6.28318530718, pi_2 = 1.57079632679, pix3_2 = 4.71238898038; //x - daugyba; _ - dalyba
 //updates per second
-int UPS = 60;
+int UPS = 144;
 //ekrano dydis (kaip veiks kai daugiau nei vienas ekranas prijungtas?)
 int WIDTH = GetSystemMetrics(SM_CXSCREEN), HEIGHT = GetSystemMetrics(SM_CYSCREEN);
 //spalva, kurią langas visiškai ignoruos
@@ -39,18 +39,21 @@ SDL_Renderer *rend;
 SDL_Event evt;
 //window handle
 HWND hWnd;
+//Rect for text input box
+SDL_Rect textRect;
 //Pelės pozicija
 int mx, my;
 double velY = 0, velX = 0; //velocity
 //Kai kurie veikėjo duomenys
 pixel_struct charStartingPos = {400,100};
 enum kaulu_ilgiai{
-    calf = 16,
-    thigh = 40
+    calf = 45,
+    thigh = 65
 };
+int ground = calf + thigh; //ŠITAS TURI BŪTI ŠIEK TIEK ILGESNIS UŽ ATSTUMĄ NUO DUBENS IR KOJŲ GALŲ NUOTRAUKOS.
 enum sprite_x_kartu_sumazintas_dydis{
     kojuDydis = 3,
-    kunelioDydis = 5
+    kunelioDydis = 4
 };
 enum{
     dideja = 1,

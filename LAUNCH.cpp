@@ -1,3 +1,7 @@
+/**
+ * @AlanMatiusevskij
+ * @Gantzomara
+*/
 #include"includes.h"
 
 #include"windowscripts.cpp"
@@ -18,8 +22,9 @@ int main(int argc, char *argv[]){
         SDL_SetRenderDrawColor(rend, COLOR_TO_IGNORE.r, COLOR_TO_IGNORE.g, COLOR_TO_IGNORE.b, COLOR_TO_IGNORE.a);
         SDL_RenderClear(rend);
         //Pradžia
-
+        
         processCharacter();
+        if(textInputReady) textInputFunctionallity();
 
         //Inputs
         SDL_PollEvent(&evt);
