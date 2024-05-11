@@ -1,7 +1,0 @@
-# Executables	
-*.exe	
-*.out	
-*.app	
-
-# Folders	
-.vscode/	
