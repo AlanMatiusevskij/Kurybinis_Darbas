@@ -86,7 +86,7 @@ void actuallyCreateCharacterBones(int indeksas, double baseAngle, double minAngl
 */
 void createCharacterBones(){
     joints.resize(JOINT_COUNT);
-    joints[DUBUO] = {0, 0, 0, 0, 0, 0, (double)charStartingPos.x, (double)charStartingPos.y};
+    joints[DUBUO] = {pi_2, 0, 0, 0, 0, 0, (double)charStartingPos.x, (double)charStartingPos.y};
 
     actuallyCreateCharacterBones(K_KELIS, rad(88), rad(78), rad(180-78), thigh, dideja);
     actuallyCreateCharacterBones(D_KELIS, rad(92), rad(78), rad(180-78), thigh, mazeja);
@@ -175,22 +175,17 @@ void resetPos(){
     return;
 }
 
-bool canChangeDirection = true;
 void animate(){
     //Moving
     if(velX!=0){
         allowedToChangeState = false;
-        double speed = velX, A;
+        double speed = velX;
         int indx[2] = {D_KELIS, K_KELIS};
         for(int i : indx){
-            if(velX>0) A = joints[i].minAngle;
-            else A =  joints[i].maxAngle;
             joints[i].ANGLE += speed*joints[i].rotDir/45;
-            if(velX*joints[i].ANGLE <= rad(A) * velX && canChangeDirection){
-                joints[i].rotDir *=-1;
-                canChangeDirection = false;
-            }
-            else if(joints[i].ANGLE > rad(A)) canChangeDirection = true;
+            if(joints[i].ANGLE > joints[i].maxAngle) joints[i].rotDir = -1;
+            if(joints[i].ANGLE <= joints[i].minAngle) joints[i].rotDir = 1;
+
 
             // if(joints[i].rotDir){
             //     joints[i].ANGLE -= speed/45;
@@ -208,15 +203,16 @@ void animate(){
         indx[0] = D_PEDA;
         indx[1] = K_PEDA;
         for(int i : indx){
-            if(std::abs(joints[i+1].ANGLE - pi_2) < 0.01) begin[i] = true;
-            if(velX>0) A = joints[i].minAngle;
-            else A =  joints[i].maxAngle;
-            joints[i].ANGLE += speed*joints[i].rotDir/32;
-            if(joints[i].ANGLE <= rad(A) && canChangeDirection){
-                joints[i].rotDir *=-1;
-                canChangeDirection = false;
+            if(std::abs(joints[i+1].ANGLE - rad(70)) < 0.01) begin[i] = true;
+            if(joints[i].rotDir == 1 && begin[i] || joints[i].rotDir == -1) joints[i].ANGLE += speed*joints[i].rotDir/32;
+            if(joints[i].ANGLE > joints[i].maxAngle){
+                joints[i].rotDir = 1;
             }
-            else if(velX*joints[i].ANGLE > rad(A)) canChangeDirection = true;
+            if(joints[i].ANGLE <= joints[i].minAngle){
+                joints[i].rotDir = -1;
+                begin[i] = false;
+
+            }
 
             // if(joints[i].rotDir){
             //     begin[i] = false;
@@ -333,7 +329,7 @@ std::string isUserInteractingWithCharacter(){
 void emotionAndActionController(){
     //Change values
     now = std::chrono::steady_clock::now();
-    timeDifference = std::chrono::duration_cast<std::chrono::minutes>(emotions.last-now);
+    timeDifference = std::chrono::duration_cast<std::chrono::seconds>(now-emotions.last);
     std::string output = isUserInteractingWithCharacter();
     if(output != "-"){
         //user is doing smt to petto; Affect values and petto's state based on what exactly is the user doing.
@@ -342,9 +338,9 @@ void emotionAndActionController(){
         //praejo x min nuo last activity;
         emotions.value -= 1;
         emotions.value = std::max(emotions.value, (double)0);
+
         emotions.last = std::chrono::steady_clock::now();
     }
-
     //Petto decides how to act
 
     //Make the changes
