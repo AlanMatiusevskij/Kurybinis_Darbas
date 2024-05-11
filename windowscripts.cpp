@@ -12,6 +12,7 @@
 *   Each pixel is indexed every 4 elements as each element stores a particular value: | red, green, blue, alpha |*/
 BYTE *bitPointer = NULL;
 
+int typeIndex = 0;
 HDC hdc, hdcMemory;
 DWORD purposeIsToRemoveWarning;
 BITMAPINFO bitmap;
@@ -44,12 +45,6 @@ void getScreenPixelInfo(){
     DeleteObject(hbitmap);
     //without 2 of 'delete' and 1 of 'release' memory increases +~30mb/s until program crashes
     return;
-}
-/**
- * Nupiešia ekrane langą, į kurį galima rašyti. 
-*/
-void textInput(){
-
 }
 
 /**
@@ -99,24 +94,59 @@ void altFunc(){
     }
     else{
         altRMBPress = false;
-        if(std::abs(textRect.w) >= 10 && std::abs(textRect.h) >= 10)
+        if(std::abs(textRect.w) >= 10 && std::abs(textRect.h) >= 10){
             textInputReady = true;
+            textinput = "";
+            int typeIndex = 0;
+        }
     }
     return;
 }
 
 /**
  * A function that is called when a text input box is active and reads keyboard input.
+ * todo: run this in a seperate thread
 */
-SDL_TextInputEvent text;
 void textInputFunctionallity(){
     SDL_SetRenderDrawColor(rend, 227, 161, 75, 255);
     SDL_RenderDrawRect(rend, &textRect);
-    text.timestamp = SDL_GetTicks();
-    std::cout << (int)evt.text.text << " "; //the hell?
-    //https://wiki.libsdl.org/SDL2/SDL_TextEditingEvent
-    //https://wiki.libsdl.org/SDL2/SDL_TextInputEvent
 
+    //Gauti tekstą/užklausą.
+    if(evt.type == SDL_TEXTINPUT){
+        textinput.insert(typeIndex, std::string(evt.text.text));
+        typeIndex++;
+    }
+    if(evt.type == SDL_KEYDOWN){
+        switch(evt.key.keysym.sym){
+            case SDLK_BACKSPACE:
+                if(textinput.size() > 0){
+                    textinput.erase(textinput.begin() + typeIndex-1);
+                    typeIndex--;
+                }
+                break;
+            case SDLK_ESCAPE:
+                textInputReady = false;
+                break;
+            case SDLK_LEFT:
+                typeIndex--;
+                break;
+            case SDLK_RIGHT:
+                typeIndex++;
+                break;
+        }
+        textinput.shrink_to_fit();
+        if(typeIndex > textinput.size()) typeIndex = textinput.size()-1;
+        if(typeIndex < 0) typeIndex = 0;
+    }
+
+    displayText();
+    
+    return;
+}
+
+
+void displayText(){
+    
     return;
 }
 

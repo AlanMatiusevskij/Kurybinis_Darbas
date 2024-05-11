@@ -1,4 +1,6 @@
 {
+    "editor.fontSize": 22,
+
     "files.associations": {
         "cmath": "cpp",
         "algorithm": "cpp",

@@ -6,6 +6,9 @@
 #define NOMINMAX //<_ windows.h overwritina cmath min ir max be šito
 #include<Windows.h>
 
+#include<ft2build.h>
+#include FT_FREETYPE_H
+
 #include<SDL2/SDL.h>
 #include<SDL2/SDL_syswm.h>
 
@@ -14,6 +17,7 @@
 #include<vector>
 #include<string>
 #include<chrono>
+#include<stdlib.h>
 #include<cmath>
 #include<algorithm>
 
@@ -23,8 +27,9 @@ struct pixel_struct{
     int y;
 };
 
-const std::string WIND_TITLE{"Petto - your personal delight"};
-const double pi = 3.14159265359, pix2 = 6.28318530718, pi_2 = 1.57079632679, pix3_2 = 4.71238898038; //x - daugyba; _ - dalyba
+const std::string WIND_TITLE{"Petto"};
+//x daugyba; _ dalyba
+const double pi = 3.14159265359, pix2 = 6.28318530718, pi_2 = 1.57079632679, pix3_2 = 4.71238898038; 
 //updates per second
 int UPS = 144;
 //ekrano dydis (kaip veiks kai daugiau nei vienas ekranas prijungtas?)
@@ -46,6 +51,10 @@ int mx, my;
 double velY = 0, velX = 0; //velocity
 //Kai kurie veikėjo duomenys
 pixel_struct charStartingPos = {400,100};
+//Text box input
+std::string textinput{};
+FT_Library ft;
+
 enum kaulu_ilgiai{
     calf = 45,
     thigh = 65
@@ -71,6 +80,7 @@ bool MakeWindowTranparent();
 void createCharacterBones();
 void startPlatformScanThread();
 void processCharacter();
+void displayText();
 void altFunc();
 double rad(double degrees);
 void prepareSprites();
