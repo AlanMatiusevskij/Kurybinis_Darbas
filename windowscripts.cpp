@@ -97,7 +97,7 @@ void altFunc(){
         if(std::abs(textRect.w) >= 10 && std::abs(textRect.h) >= 10){
             textInputReady = true;
             textinput = "";
-            int typeIndex = 0;
+            typeIndex = 0;
         }
     }
     return;
@@ -105,7 +105,7 @@ void altFunc(){
 
 /**
  * A function that is called when a text input box is active and reads keyboard input.
- * todo: run this in a seperate thread
+ * todo: get window focus. for some reason doesnt react when rpessing the upp[er part of the body??]
 */
 void textInputFunctionallity(){
     SDL_SetRenderDrawColor(rend, 227, 161, 75, 255);
@@ -139,16 +139,91 @@ void textInputFunctionallity(){
         if(typeIndex < 0) typeIndex = 0;
     }
 
-    displayText();
-    
+    displayText(textinput, textRect);
     return;
 }
 
 /**
  * 
 */
-void displayText(){
-    
+void loadFonts(){
+    FT_Open_Args args;
+    args.flags = FT_OPEN_PATHNAME;
+    char fontpath[] = "./assets/fonts/OpenSans-Regular.ttf";
+    args.pathname = fontpath; 
+    if(FT_Open_Face(ft, &args, 0, &face)) std::cout << "Failed to load a font!\n";
+    face->glyph->format = FT_GLYPH_FORMAT_BITMAP;
+    FT_Set_Pixel_Sizes(face, fontSize, fontSize);
+
+    for(int i = 0; i < 256; i++)
+        colors[i].r = colors[i].g = colors[i].b = i;
+    return;
+}
+
+
+/**
+ * 
+*/
+void displayText(std::string sentence, SDL_Rect &textBox){
+    std::vector<std::string> words;
+    std::string individual_word{""};
+    FT_Bitmap ftbitmap;
+    int currentWidth = 0;
+
+    for(int i = 0; i < sentence.size(); i++){
+        if(sentence[i] == ' '){
+            words.push_back(individual_word);
+            individual_word = "";
+        }
+        else individual_word += sentence[i];
+    }
+    words.push_back(individual_word);
+
+    for(std::string phrase : words){
+        for(char letter : phrase){
+            //Load a specific letter and get its bitmap
+            FT_Load_Char(face, letter, FT_LOAD_RENDER);
+            ftbitmap = face->glyph->bitmap;
+
+            SDL_Texture*texture;
+            SDL_Surface *glyph = SDL_CreateRGBSurfaceFrom(ftbitmap.buffer, ftbitmap.width, ftbitmap.rows, 8, ftbitmap.pitch, 0, 0, 0, 0xFF);
+            
+            //Apply and chnage colors (should be a cleaner way of doing this but oh well).
+            SDL_SetPaletteColors(glyph->format->palette, colors, 0, 256);
+            SDL_SetSurfaceBlendMode(glyph, SDL_BlendMode::SDL_BLENDMODE_NONE);
+
+            //Create a place, where the letter will be displayed and display it.
+            SDL_Rect dest = {textBox.x + currentWidth, textBox.y , glyph->w, glyph->h};
+            texture = SDL_CreateTextureFromSurface(rend, glyph);
+            SDL_RenderCopy(rend, texture, NULL, &dest);    
+            
+            //Clean up. Change positions of the next letter.
+            currentWidth+=glyph->w;
+            SDL_FreeSurface(glyph);
+            SDL_DestroyTexture(texture);
+        }
+    }
+
+
+    // for(std::string phrase : words){
+    //     for(char letter : phrase){
+    //         FT_Load_Char(face, letter, FT_LOAD_RENDER);
+    //         ftbitmap = face->glyph->bitmap;
+    //         SDL_Surface* tmpsurfc = SDL_CreateRGBSurface(0,  ftbitmap.width, ftbitmap.rows, 8, 0, 0, 0, 0xFF);
+
+    //         for(int i = 0; i < ftbitmap.rows * ftbitmap.width; i++){
+    //             uint8_t pixel_data = ftbitmap.buffer[i];
+    //             Uint32 pixel_color = SDL_MapRGBA(tmpsurfc->format, pixel_data, pixel_data, pixel_data, pixel_data);
+    //             *((Uint32*)((Uint8*)tmpsurfc->pixels + i*sizeof(Uint32))) = pixel_color;
+    //         }
+
+    //         // tmpsurfc->pixels = (void*)ftbitmap.buffer;
+    //         SDL_Texture* tmptextr = SDL_CreateTextureFromSurface(rend, tmpsurfc);
+    //         SDL_Rect letterBox = {textBox.x + currentWidth, textBox.y + 3, tmpsurfc->w, tmpsurfc->h};
+    //         SDL_RenderCopy(rend, tmptextr, NULL, &letterBox);
+    //         currentWidth += tmpsurfc->w + 3;
+    //     }
+    // }
     return;
 }
 

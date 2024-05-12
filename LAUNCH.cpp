@@ -36,6 +36,7 @@ int main(int argc, char *argv[]){
         SDL_RenderPresent(rend);
         SDL_Delay((1/float(UPS))*1000);
     }
+    FT_Done_FreeType(ft);
     SDL_Quit();
     return 0;
 }
@@ -47,6 +48,10 @@ void INITIALIZE(){
 
     wind = SDL_CreateWindow(WIND_TITLE.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_ALWAYS_ON_TOP);
     rend = SDL_CreateRenderer(wind, -1, SDL_RENDERER_ACCELERATED);
+
+    //Load fonts
+    SDL_StartTextInput();
+    loadFonts();
 
     //Get window handle;
     SDL_SysWMinfo wmInfo;

@@ -54,6 +54,9 @@ pixel_struct charStartingPos = {400,100};
 //Text box input
 std::string textinput{};
 FT_Library ft;
+FT_FaceRec_* face;
+int fontSize = 24;
+SDL_Color colors[256];
 
 enum kaulu_ilgiai{
     calf = 45,
@@ -82,6 +85,8 @@ void startPlatformScanThread();
 void processCharacter();
 void displayText();
 void altFunc();
+void loadFonts();
+void displayText(std::string sentence, SDL_Rect &textBox);
 double rad(double degrees);
 void prepareSprites();
 //some useful stuff:

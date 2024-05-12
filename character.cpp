@@ -355,7 +355,7 @@ void emotionAndActionController(){
 
     return;
 }
-
+// @return grąžina dabartini laiką kaip time.point variable.
 std::chrono::steady_clock::time_point currentTime(){
     return std::chrono::steady_clock::now();
 }
