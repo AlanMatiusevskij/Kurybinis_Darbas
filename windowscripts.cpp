@@ -188,9 +188,24 @@ void displayText(std::string sentence, SDL_Rect &textBox){
             SDL_Texture*texture;
             SDL_Surface *glyph = SDL_CreateRGBSurfaceFrom(ftbitmap.buffer, ftbitmap.width, ftbitmap.rows, 8, ftbitmap.pitch, 0, 0, 0, 0xFF);
             
-            //Apply and chnage colors (should be a cleaner way of doing this but oh well).
+            //Apply and change colors (should be a cleaner way of doing this but oh well).
             SDL_SetPaletteColors(glyph->format->palette, colors, 0, 256);
             SDL_SetSurfaceBlendMode(glyph, SDL_BlendMode::SDL_BLENDMODE_NONE);
+                //Change all alfa values to 255, then all non-white colors should be transparent.
+            SDL_Color rgb;
+            SDL_LockSurface(glyph);
+            for(int i = 0; i < glyph->w + glyph->pitch*glyph->h; i++){
+                Uint32 *data = (Uint32*)((Uint8*)glyph->pixels + i * glyph->format->BitsPerPixel);
+                SDL_GetRGBA(*data, glyph->format, &rgb.r, &rgb.g, &rgb.b, &rgb.a);
+                if(rgb.r != 255 && rgb.g != 255 && rgb.b != 255){
+                    data[0] = COLOR_TO_IGNORE.r;
+                    data[1] = COLOR_TO_IGNORE.g;
+                    data[2] = COLOR_TO_IGNORE.b;
+                }
+                if(rgb.a != 255) data[3] = 255;
+            }
+            SDL_UnlockSurface(glyph);
+            // tarkim tikrai sitas pikselis ir viskas ok; std::cout << rgb.r << ", " << rgb.g << ", " << rgb.b << ", " << rgb.a << "\n";
 
             //Create a place, where the letter will be displayed and display it.
             SDL_Rect dest = {textBox.x + currentWidth, textBox.y , glyph->w, glyph->h};
@@ -203,27 +218,6 @@ void displayText(std::string sentence, SDL_Rect &textBox){
             SDL_DestroyTexture(texture);
         }
     }
-
-
-    // for(std::string phrase : words){
-    //     for(char letter : phrase){
-    //         FT_Load_Char(face, letter, FT_LOAD_RENDER);
-    //         ftbitmap = face->glyph->bitmap;
-    //         SDL_Surface* tmpsurfc = SDL_CreateRGBSurface(0,  ftbitmap.width, ftbitmap.rows, 8, 0, 0, 0, 0xFF);
-
-    //         for(int i = 0; i < ftbitmap.rows * ftbitmap.width; i++){
-    //             uint8_t pixel_data = ftbitmap.buffer[i];
-    //             Uint32 pixel_color = SDL_MapRGBA(tmpsurfc->format, pixel_data, pixel_data, pixel_data, pixel_data);
-    //             *((Uint32*)((Uint8*)tmpsurfc->pixels + i*sizeof(Uint32))) = pixel_color;
-    //         }
-
-    //         // tmpsurfc->pixels = (void*)ftbitmap.buffer;
-    //         SDL_Texture* tmptextr = SDL_CreateTextureFromSurface(rend, tmpsurfc);
-    //         SDL_Rect letterBox = {textBox.x + currentWidth, textBox.y + 3, tmpsurfc->w, tmpsurfc->h};
-    //         SDL_RenderCopy(rend, tmptextr, NULL, &letterBox);
-    //         currentWidth += tmpsurfc->w + 3;
-    //     }
-    // }
     return;
 }
 
