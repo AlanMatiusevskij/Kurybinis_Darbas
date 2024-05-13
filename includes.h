@@ -35,7 +35,7 @@ int UPS = 144;
 //ekrano dydis (kaip veiks kai daugiau nei vienas ekranas prijungtas?)
 int WIDTH = GetSystemMetrics(SM_CXSCREEN), HEIGHT = GetSystemMetrics(SM_CYSCREEN);
 //spalva, kurią langas visiškai ignoruos
-SDL_Color COLOR_TO_IGNORE = {255,0,255,255};
+SDL_Color COLOR_TO_IGNORE = {0,0,0,255};
 //koks didžiausias spalvų skirtumas leistinas prieš nuskaitant naują platformą
 int platformScanColorME = 5;
 //Pagrindiniai SDL variables
@@ -55,7 +55,7 @@ pixel_struct charStartingPos = {400,100};
 std::string textinput{};
 FT_Library ft;
 FT_FaceRec_* face;
-int fontSize = 24;
+int fontSize = 17;
 SDL_Color colors[256];
 
 enum kaulu_ilgiai{
@@ -83,10 +83,9 @@ bool MakeWindowTranparent();
 void createCharacterBones();
 void startPlatformScanThread();
 void processCharacter();
-void displayText();
 void altFunc();
 void loadFonts();
-void displayText(std::string sentence, SDL_Rect &textBox);
+void displayText(std::string sentence, SDL_Rect &textBox, int fontMaxHeight);
 double rad(double degrees);
 void prepareSprites();
 //some useful stuff:

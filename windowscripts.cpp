@@ -139,7 +139,7 @@ void textInputFunctionallity(){
         if(typeIndex < 0) typeIndex = 0;
     }
 
-    displayText(textinput, textRect);
+    displayText(textinput, textRect, fontSize-fontSize/5);
     return;
 }
 
@@ -156,19 +156,19 @@ void loadFonts(){
     FT_Set_Pixel_Sizes(face, fontSize, fontSize);
 
     for(int i = 0; i < 256; i++)
-        colors[i].r = colors[i].g = colors[i].b = i;
+        colors[i].r = colors[i].g = colors[i].b = colors[i].a= i;
     return;
 }
-
 
 /**
  * 
 */
-void displayText(std::string sentence, SDL_Rect &textBox){
+void displayText(std::string sentence, SDL_Rect &textBox, int fontMaxHeight){
     std::vector<std::string> words;
     std::string individual_word{""};
     FT_Bitmap ftbitmap;
-    int currentWidth = 0;
+    int currentWidth = 2;
+    int currentHeight = fontMaxHeight + 2;
 
     for(int i = 0; i < sentence.size(); i++){
         if(sentence[i] == ' '){
@@ -188,35 +188,22 @@ void displayText(std::string sentence, SDL_Rect &textBox){
             SDL_Texture*texture;
             SDL_Surface *glyph = SDL_CreateRGBSurfaceFrom(ftbitmap.buffer, ftbitmap.width, ftbitmap.rows, 8, ftbitmap.pitch, 0, 0, 0, 0xFF);
             
-            //Apply and change colors (should be a cleaner way of doing this but oh well).
+            //Apply pallete (basically give an array of colors to use).
             SDL_SetPaletteColors(glyph->format->palette, colors, 0, 256);
-            SDL_SetSurfaceBlendMode(glyph, SDL_BlendMode::SDL_BLENDMODE_NONE);
-                //Change all alfa values to 255, then all non-white colors should be transparent.
-            SDL_Color rgb;
-            SDL_LockSurface(glyph);
-            for(int i = 0; i < glyph->w + glyph->pitch*glyph->h; i++){
-                Uint32 *data = (Uint32*)((Uint8*)glyph->pixels + i * glyph->format->BitsPerPixel);
-                SDL_GetRGBA(*data, glyph->format, &rgb.r, &rgb.g, &rgb.b, &rgb.a);
-                if(rgb.r != 255 && rgb.g != 255 && rgb.b != 255){
-                    data[0] = COLOR_TO_IGNORE.r;
-                    data[1] = COLOR_TO_IGNORE.g;
-                    data[2] = COLOR_TO_IGNORE.b;
-                }
-                if(rgb.a != 255) data[3] = 255;
-            }
-            SDL_UnlockSurface(glyph);
-            // tarkim tikrai sitas pikselis ir viskas ok; std::cout << rgb.r << ", " << rgb.g << ", " << rgb.b << ", " << rgb.a << "\n";
+            SDL_SetSurfaceBlendMode(glyph, SDL_BlendMode::SDL_BLENDMODE_BLEND);
 
             //Create a place, where the letter will be displayed and display it.
-            SDL_Rect dest = {textBox.x + currentWidth, textBox.y , glyph->w, glyph->h};
+            int belowBaseline = face->glyph->metrics.height - face->glyph->metrics.horiBearingY;
+            SDL_Rect dest = {textBox.x + currentWidth,int( textBox.y + fontMaxHeight - glyph->h + belowBaseline/50), glyph->w, glyph->h};
             texture = SDL_CreateTextureFromSurface(rend, glyph);
             SDL_RenderCopy(rend, texture, NULL, &dest);    
             
             //Clean up. Change positions of the next letter.
-            currentWidth+=glyph->w;
+            currentWidth+= glyph->w;
             SDL_FreeSurface(glyph);
             SDL_DestroyTexture(texture);
         }
+        currentWidth+=4;
     }
     return;
 }
