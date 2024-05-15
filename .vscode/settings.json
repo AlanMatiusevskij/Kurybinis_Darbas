@@ -1,5 +1,5 @@
 {
-    "editor.fontSize": 20,
+    "editor.fontSize": 16,
 
     "files.associations": {
         "cmath": "cpp",

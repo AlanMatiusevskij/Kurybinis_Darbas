@@ -1,0 +1,22 @@
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Executables
+*.exe
+*.out
+*.app
+
+# nuitka created folders
+*.build/
+*.dist/
+*.onefile-build/
+
+# Vscode settings
+.vscode/

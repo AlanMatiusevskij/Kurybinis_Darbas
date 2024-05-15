@@ -187,7 +187,7 @@ void displayText(std::string sentence, SDL_Rect &textBox, int fontMaxHeight){
 
             SDL_Texture*texture;
             SDL_Surface *glyph = SDL_CreateRGBSurfaceFrom(ftbitmap.buffer, ftbitmap.width, ftbitmap.rows, 8, ftbitmap.pitch, 0, 0, 0, 0xFF);
-            
+                
             //Apply pallete (basically give an array of colors to use).
             SDL_SetPaletteColors(glyph->format->palette, colors, 0, 256);
             SDL_SetSurfaceBlendMode(glyph, SDL_BlendMode::SDL_BLENDMODE_BLEND);
