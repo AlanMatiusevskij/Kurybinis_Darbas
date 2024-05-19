@@ -20,6 +20,13 @@ bool altLMBPress = false;
 bool altRMBPress = false;
 bool textInputReady = false;
 
+struct word{
+    SDL_Texture* texture;
+    SDL_Rect pos;
+};
+std::vector<std::string> previous_words{};
+std::vector<word> words{};
+
 /**
  * Gets various information about the screen bitmap and saves it to an array ("bitpointer");
 */
@@ -105,7 +112,7 @@ void altFunc(){
 
 /**
  * A function that is called when a text input box is active and reads keyboard input.
- * todo: get window focus. for some reason doesnt react when rpessing the upp[er part of the body??]
+ * todo: get window focus. for some reason doesnt react when pressing the upper part of the body??
 */
 void textInputFunctionallity(){
     SDL_SetRenderDrawColor(rend, 227, 161, 75, 255);
@@ -144,7 +151,7 @@ void textInputFunctionallity(){
 }
 
 /**
- * 
+ * Loads the main .ttf type font.
 */
 void loadFonts(){
     FT_Open_Args args;
@@ -161,10 +168,13 @@ void loadFonts(){
 }
 
 /**
- * 
+ * Display text.
+ * @param sentence the text to display.
+ * @param textBox the SDL_Rect area where the text should be.
+ * @param fontMaxHeight is the maximum height of the font.
 */
 void displayText(std::string sentence, SDL_Rect &textBox, int fontMaxHeight){
-    std::vector<std::string> words;
+    std::vector<std::string> words_str;
     std::string individual_word{""};
     FT_Bitmap ftbitmap;
     int currentWidth = 2;
@@ -172,54 +182,90 @@ void displayText(std::string sentence, SDL_Rect &textBox, int fontMaxHeight){
 
     for(int i = 0; i < sentence.size(); i++){
         if(sentence[i] == ' '){
-            words.push_back(individual_word);
+            words_str.push_back(individual_word);
             individual_word = "";
         }
         else individual_word += sentence[i];
     }
-    words.push_back(individual_word);
+    words_str.push_back(individual_word);
 
-    for(std::string phrase : words){
-        for(char letter : phrase){
-            //Load a specific letter and get its bitmap
-            FT_Load_Char(face, letter, FT_LOAD_RENDER);
-            ftbitmap = face->glyph->bitmap;
+    //Load all strings into a single surface.
+    //Don't create new textures if there's no change in text.
+    if(words_str != previous_words){
+        previous_words = words_str;
+        
+        //Clear information.
+        for(int i = 0; i < words.size(); i++)
+            SDL_DestroyTexture(words[i].texture);
+        words.clear();
 
-            SDL_Texture*texture;
-            SDL_Surface *glyph = SDL_CreateRGBSurfaceFrom(ftbitmap.buffer, ftbitmap.width, ftbitmap.rows, 8, ftbitmap.pitch, 0, 0, 0, 0xFF);
-                
-            //Apply pallete (basically give an array of colors to use).
-            SDL_SetPaletteColors(glyph->format->palette, colors, 0, 256);
-            SDL_SetSurfaceBlendMode(glyph, SDL_BlendMode::SDL_BLENDMODE_BLEND);
+        int total_width = 1;
+        int y = 1;
+        
+        for(std::string phrase : words_str){
+            //Get all bitmaps.
+            std::vector<SDL_Surface*> individual_letter_surfc;
+            std::vector<int> belowBaseLine;
+            int individual_width = 0;
+            int start_pos = total_width;
 
-            //Create a place, where the letter will be displayed and display it.
-            int belowBaseline = face->glyph->metrics.height - face->glyph->metrics.horiBearingY;
-            SDL_Rect dest = {textBox.x + currentWidth,int( textBox.y + fontMaxHeight - glyph->h + belowBaseline/50), glyph->w, glyph->h};
-            texture = SDL_CreateTextureFromSurface(rend, glyph);
-            SDL_RenderCopy(rend, texture, NULL, &dest);    
+            for(char letter : phrase){
+                //Load a specific letter and get its bitma, belowBaseMap value.
+                FT_Load_Char(face, letter, FT_LOAD_RENDER);
+                ftbitmap = face->glyph->bitmap;
+
+                individual_letter_surfc.push_back(SDL_CreateRGBSurfaceFrom(ftbitmap.buffer, ftbitmap.width, ftbitmap.rows, 8, ftbitmap.pitch, 0, 0, 0, 0xFF));
+                belowBaseLine.push_back((face->glyph->metrics.height - face->glyph->metrics.horiBearingY)/50);
+
+                total_width+=ftbitmap.width;
+                individual_width+=ftbitmap.width;
+            }
             
-            //Clean up. Change positions of the next letter.
-            currentWidth+= glyph->w;
-            SDL_FreeSurface(glyph);
-            SDL_DestroyTexture(texture);
+            //Decide whether the word goes into a new line.
+            if(total_width + 1 >= textBox.w){
+                y+=35;
+                total_width = 1;
+                start_pos = 1;
+            }
+
+            //Integrate all letters into a single surface.
+            SDL_Surface* word_surf = SDL_CreateRGBSurfaceWithFormat(0, individual_width, 30, 8, individual_letter_surfc[0]->format->format);;
+            int tmp_x = 0;
+            
+            for(int i = 0; i < individual_letter_surfc.size(); i++){
+                SDL_Surface* *surfc = &individual_letter_surfc[i];
+
+                SDL_Rect tmprect = {tmp_x, fontMaxHeight-(*surfc)->h+belowBaseLine[i], 0, 0};
+                SDL_BlitSurface((*surfc), NULL, word_surf, &tmprect);
+
+                tmp_x += (*surfc)->w;
+            }
+            //Set surface colors.
+            SDL_SetPaletteColors(word_surf->format->palette, colors, 0, 256);
+            SDL_SetSurfaceBlendMode(word_surf, SDL_BlendMode::SDL_BLENDMODE_BLEND);
+
+            //create a texture, store position information.
+            int i = words.size();
+            words.resize(i + 1);
+            words[i].texture = SDL_CreateTextureFromSurface(rend, word_surf);
+            words[i].pos = {start_pos, y, individual_width, 30};
+            total_width += 4;
+
+            //Clean up.
+            SDL_FreeSurface(word_surf);
+            for(int i = 0; i < individual_letter_surfc.size(); i++)
+                SDL_FreeSurface(individual_letter_surfc[i]);
+    
+
+            //     SDL_RenderCopy(rend, texture, NULL, &dest);   
         }
-        currentWidth+=4;
     }
+    
+    //Display words.
+    for(int i = 0; i < words.size(); i++)
+        SDL_RenderCopy(rend, words[i].texture, NULL, &words[i].pos);
     return;
 }
-
-//use this only for debug(or curiosity), but it wont work with scanning thread at the same time!
-// void displayFloors(){
-//     SDL_SetRenderDrawColor(rend, COLOR_TO_IGNORE.r, COLOR_TO_IGNORE.g, COLOR_TO_IGNORE.b, COLOR_TO_IGNORE.a);
-//     SDL_RenderClear(rend);
-//     SDL_RenderPresent(rend);
-//     platformPoints = GETSCREENGROUND(platformScanColorME);
-//     SDL_SetRenderDrawColor(rend, 255,255,0,255);
-//     for(int i = 0; i < platformPoints.size(); i++){
-//         SDL_RenderDrawPoint(rend, platformPoints[i].x, platformPoints[i].y);
-//     }
-// }
-
 /*stupidly slow
     COLORREF key;
     Get device context - in this case, whole display

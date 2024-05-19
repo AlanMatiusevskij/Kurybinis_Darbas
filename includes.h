@@ -62,7 +62,7 @@ enum kaulu_ilgiai{
     calf = 45,
     thigh = 65
 };
-int ground = calf + thigh; //ŠITAS TURI BŪTI ŠIEK TIEK ILGESNIS UŽ ATSTUMĄ NUO DUBENS IR KOJŲ GALŲ NUOTRAUKOS.
+int ground = calf + thigh; //ŠITAS GALI TURĖTI BŪTI ŠIEK TIEK ILGESNIS UŽ ATSTUMĄ NUO DUBENS IR KOJŲ GALŲ NUOTRAUKOS.
 enum sprite_x_kartu_sumazintas_dydis{
     kojuDydis = 3,
     kunelioDydis = 4

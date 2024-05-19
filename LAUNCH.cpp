@@ -33,7 +33,7 @@ int main(int argc, char *argv[]){
             break;
             
         //Pabaiga
-        SDL_RenderPresent(rend);
+        SDL_RenderPresent(rend);    
         SDL_Delay((1/float(UPS))*1000);
     }
     FT_Done_FreeType(ft);
