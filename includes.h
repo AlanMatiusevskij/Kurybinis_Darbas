@@ -9,6 +9,8 @@
 #include<ft2build.h>
 #include FT_FREETYPE_H
 
+#include<PyC-Link/pyclink.h>
+
 #include<SDL2/SDL.h>
 #include<SDL2/SDL_syswm.h>
 

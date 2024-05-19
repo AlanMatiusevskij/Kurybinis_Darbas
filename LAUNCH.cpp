@@ -54,6 +54,8 @@ void INITIALIZE(){
     SDL_StartTextInput();
     loadFonts();
 
+    pyclink::changeMapName("fileMapObjectPetto1");
+
     //Get window handle;
     SDL_SysWMinfo wmInfo;
     SDL_VERSION(&wmInfo.version);
