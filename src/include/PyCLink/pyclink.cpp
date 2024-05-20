@@ -13,23 +13,23 @@ namespace pyclink{
 
     std::thread thread;
 
-    bool directLink(const char* path, const char* data, char* *returnedData, int maxCharNumb);
+    bool directLink(const char* path, const char* data, char* *returnedData, int maxCharNumb, bool threaded);
 }
 
 bool pyclink::communicate(const char* path, const char* data, char* *returnedData, int maxCharNumb, bool threaded){
     if(threaded){
         try{
-            thread = std::thread(pyclink::directLink, path, data, returnedData, maxCharNumb);
+            thread = std::thread(pyclink::directLink, path, data, returnedData, maxCharNumb, threaded);
         }
         catch(const std::system_error &error){
             return true;
         }
         return false;
     }
-    return pyclink::directLink(path, data, returnedData, maxCharNumb);
+    return pyclink::directLink(path, data, returnedData, maxCharNumb, threaded);
 }
 
-bool pyclink::directLink(const char* path, const char* input, char* *returnedData, int maxCharNumb){
+bool pyclink::directLink(const char* path, const char* input, char* *returnedData, int maxCharNumb, bool threaded){
     //Create a file map object handle    
     HANDLE mapHandle = CreateFileMappingW(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(char)*maxCharNumb, mapName);
     //TODO must be new and check for failure
@@ -69,6 +69,7 @@ bool pyclink::directLink(const char* path, const char* input, char* *returnedDat
     //Clean up
     UnmapViewOfFile(mapData);
     CloseHandle(mapHandle);
+    if(threaded) thread.detach();
     
     return false;
 }

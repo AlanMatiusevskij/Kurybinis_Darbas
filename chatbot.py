@@ -3,6 +3,5 @@ import sys
 
 #get input
 #do something with it
-print(pyclink.getMapName())
-
+pyclink.send(pyclink.TYPES.CHAR_P, "Paspaudete 'enter'. Sis atsakymas atejo is pitono. Ateityje ateis is chatgpt (tikriausiai?).")
 sys.exit()

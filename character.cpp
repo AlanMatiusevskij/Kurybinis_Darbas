@@ -135,17 +135,19 @@ void physics(){
 
 /**
  * Nustato, kada įvyksta 'atsitrenkimas' ('collision').
- * Ką pakeisti: teamhoode.
  * @return "KOJOS", kai veikėjas paliečia platformą. "-", kai veikėjas nieko nepaliečia.
 */
 std::string collisions(){
-    for(int i : feet_index){
-        if(platformPoints.size() >= int(joints[DUBUO].y + 1) * WIDTH - joints[DUBUO].x + ground*WIDTH || joints[i].y + 2 >= HEIGHT-1){
-            if(platformPoints[int(joints[DUBUO].y + 1) *WIDTH -joints[DUBUO].x + ground*WIDTH ] == 1 || joints[i].y + 2 >= HEIGHT-1){
-                return "KOJOS";
-            }
-        }
+    if(joints[DUBUO].y + ground + 2 >= HEIGHT - 1){
+        joints[DUBUO].y = HEIGHT-ground;
+        return "KOJOS";
     }
+
+    //patikrinti keleta y tasku depenbding on how fast the thing falls
+    if(platformPoints.size() > round(joints[DUBUO].y + 1) * WIDTH - joints[DUBUO].x + ground*WIDTH)
+        if(platformPoints[round(joints[DUBUO].y + 1) * WIDTH - joints[DUBUO].x + ground*WIDTH] == 1){
+            return "KOJOS";
+        }
     return "-"; //no collision
 }
 
@@ -221,16 +223,16 @@ void prepareSprites(){
     SDL_Surface* tmpSurfc{};
     spritePositions.resize(JOINT_COUNT);
     sprites.resize(totalSpriteCategoryNumb);
-    sprites[category_test].resize(categoryTest_SpriteNumb);
+    // sprites[category_test].resize(categoryTest_SpriteNumb);
 
-    tmpSurfc = SDL_LoadBMP("./assets/images/test/kojele.bmp");
-    sprites[category_test][test_koja].img_data = tmpSurfc;
-    sprites[category_test][test_koja].img = SDL_CreateTextureFromSurface(rend, tmpSurfc);
+    // tmpSurfc = SDL_LoadBMP("./assets/images/test/kojele.bmp");
+    // sprites[category_test][test_koja].img_data = tmpSurfc;
+    // sprites[category_test][test_koja].img = SDL_CreateTextureFromSurface(rend, tmpSurfc);
 
-    SDL_FreeSurface(tmpSurfc); //free memory, kadangi vis tapatį variable naudojam, neturėtų būti memory leak, bet gali nutikti somehow vistiek 
-    tmpSurfc = SDL_LoadBMP("./assets/images/test/kunelis.bmp");
-    sprites[category_test][test_kunelis].img_data = tmpSurfc;
-    sprites[category_test][test_kunelis].img = SDL_CreateTextureFromSurface(rend, tmpSurfc);
+    // SDL_FreeSurface(tmpSurfc);
+    // tmpSurfc = SDL_LoadBMP("./assets/images/test/kunelis.bmp");
+    // sprites[category_test][test_kunelis].img_data = tmpSurfc;
+    // sprites[category_test][test_kunelis].img = SDL_CreateTextureFromSurface(rend, tmpSurfc);
     return;
 }
 

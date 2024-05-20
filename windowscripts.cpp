@@ -20,13 +20,8 @@ bool altLMBPress = false;
 bool altRMBPress = false;
 bool textInputReady = false;
 bool allowedToType = true;
-struct word{
-    SDL_Texture* texture;
-    SDL_Rect pos;
-};
-std::vector<std::string> previous_words{};
-std::vector<word> words{};
 
+std::vector<std::string> words_str;
 char* answer = (char*)"-";
 
 /**
@@ -143,7 +138,7 @@ void textInputFunctionallity(){
                 typeIndex++;
                 break;
             case SDLK_RETURN:
-                chatGPTinquiry();
+                chatGPTinquiry(words_str);
                 break;
         }
         textinput.shrink_to_fit();
@@ -179,7 +174,7 @@ void loadFonts(){
  * @param fontMaxHeight is the maximum height of the font.
 */
 void displayText(std::string sentence, SDL_Rect &textBox, int fontMaxHeight){
-    std::vector<std::string> words_str;
+    words_str.clear();
     std::string individual_word{""};
     FT_Bitmap ftbitmap;
 
@@ -192,90 +187,57 @@ void displayText(std::string sentence, SDL_Rect &textBox, int fontMaxHeight){
     }
     words_str.push_back(individual_word);
 
-    //Load all strings into a single surface.
-    //Don't create new textures if there's no change in text.
-    if(words_str != previous_words){
-        previous_words = words_str;
-        
-        //Clear information.
-        for(int i = 0; i < words.size(); i++)
-            SDL_DestroyTexture(words[i].texture);
-        words.clear();
+    //Display all characters.
+    int totalWidth = 1;
+    int y = 1;
+    //Word info
+    int letterCount = 0; //since the start of the word.
 
-        int total_width = 1;
-        int y = 1;
-        
-        for(std::string phrase : words_str){
-            //Get all bitmaps.
-            std::vector<SDL_Surface*> individual_letter_surfc;
-            std::vector<int> belowBaseLine;
-            int individual_width = 0;
-            int start_pos = total_width;
+    for(std::string phrase : words_str){
+        for(char letter : phrase){
+            //Get bitmap
+            FT_Load_Char(face, letter, FT_LOAD_RENDER);
+            ftbitmap = face->glyph->bitmap;
 
-            for(char letter : phrase){
-                //Load a specific letter and get its bitma, belowBaseMap value.
-                FT_Load_Char(face, letter, FT_LOAD_RENDER);
-                ftbitmap = face->glyph->bitmap;
+            //Create a surface and apply palette's colros
+            SDL_Surface* glyph = SDL_CreateRGBSurfaceFrom(ftbitmap.buffer, ftbitmap.width, ftbitmap.rows, 8, ftbitmap.pitch, 0, 0, 0, 0xFF);
+            SDL_SetPaletteColors(glyph->format->palette, colors, 0, 256);
+            SDL_SetSurfaceBlendMode(glyph, SDL_BlendMode::SDL_BLENDMODE_BLEND);            
 
-                individual_letter_surfc.push_back(SDL_CreateRGBSurfaceFrom(ftbitmap.buffer, ftbitmap.width, ftbitmap.rows, 8, ftbitmap.pitch, 0, 0, 0, 0xFF));
-                belowBaseLine.push_back((face->glyph->metrics.height - face->glyph->metrics.horiBearingY)/50);
-
-                total_width+=ftbitmap.width;
-                individual_width+=ftbitmap.width;
-            }
+            //Create the 'letterbox'.
+            int belowBaseLine = (face->glyph->metrics.height - face->glyph->metrics.horiBearingY)/55;    
+            SDL_Rect pos = {textBox.x + totalWidth, int(textBox.y + y + fontMaxHeight - glyph->h + belowBaseLine), glyph->w, glyph->h};
             
-            //Decide whether the word goes into a new line.
-            if(total_width + 1 >= textBox.w){
-                y+=30;
-                total_width = individual_width;
-                start_pos = 1;
-            }
-            
-            //Integrate all letters into a single surface.
-            SDL_Surface* word_surf = SDL_CreateRGBSurfaceWithFormat(0, individual_width + individual_letter_surfc.size(), 28, 8, SDL_PixelFormatEnum::SDL_PIXELFORMAT_INDEX8);
-            int tmp_x = 0;
-            
-            for(int i = 0; i < individual_letter_surfc.size(); i++){
-                SDL_Surface* *surfc = &individual_letter_surfc[i];
-
-                SDL_Rect tmprect = {tmp_x, fontMaxHeight-(*surfc)->h+belowBaseLine[i], 0, 0};
-                SDL_BlitSurface((*surfc), NULL, word_surf, &tmprect);
-
-                tmp_x += (*surfc)->w + 1;
+            //Check if the letter goes to a new line.
+            totalWidth+=glyph->w;
+            if(totalWidth>=textBox.w){
+                y += 24;
+                totalWidth = 1 + glyph->w;
+                pos.x = textBox.x + 1;
+                pos.y = int(textBox.y + y + fontMaxHeight - glyph->h + belowBaseLine);
             }
 
-            //Set surface colors.
-            SDL_SetPaletteColors(word_surf->format->palette, colors, 0, 256);
-            SDL_SetSurfaceBlendMode(word_surf, SDL_BlendMode::SDL_BLENDMODE_BLEND);
-
-            //create a texture, store position information.
-            int i = words.size();
-            words.resize(i + 1);
-            words[i].texture = SDL_CreateTextureFromSurface(rend, word_surf);
-            SDL_SetTextureBlendMode(words[i].texture, SDL_BlendMode::SDL_BLENDMODE_BLEND);
-            words[i].pos = {start_pos + textBox.x, y + textBox.y, individual_width, 30};
-            total_width += 6;
-
+            //Display the letter.
+            SDL_Texture* texture = SDL_CreateTextureFromSurface(rend, glyph);
+            SDL_RenderCopy(rend, texture, NULL, &pos);
+            
             //Clean up.
-            SDL_FreeSurface(word_surf);
-            for(int i = 0; i < individual_letter_surfc.size(); i++)
-                SDL_FreeSurface(individual_letter_surfc[i]);
+            SDL_FreeSurface(glyph);
+            SDL_DestroyTexture(texture);
         }
+        totalWidth+=6;
+        letterCount = 0;
     }
-    
-    //Display words.
-    for(int i = 0; i < words.size(); i++)
-        SDL_RenderCopy(rend, words[i].texture, NULL, &words[i].pos);
     return;
 }
 
 /**
  * Starts the python application to send the contents of the text field to chatgpt (python applicaiton)
 */
-void chatGPTinquiry(){
-    std::string allText;
-    for(int i = 0; i < previous_words.size(); i++)
-        allText = allText + previous_words[i];
+void chatGPTinquiry(std::vector<std::string> words){
+    std::string allText = "";
+    for(int i = 0; i < words.size(); i++)
+        allText += words[i];
 
     allowedToType = false;
     pyclink::communicate("./chatbot.exe", allText.c_str(), &answer, 5000, true);

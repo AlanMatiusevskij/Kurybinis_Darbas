@@ -10,6 +10,7 @@
 
 //Defining functions
 void INITIALIZE();
+void getErrors();
 
 //Defining variables
 
@@ -51,8 +52,7 @@ void INITIALIZE(){
     if(FT_Init_FreeType(&ft)) std::cout << "Failed to initialize FreeType library!\n";
 
     wind = SDL_CreateWindow(WIND_TITLE.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_ALWAYS_ON_TOP);
-    rend = SDL_CreateRenderer(wind, -1, 0);
-    SDL_SetRenderDrawBlendMode(rend, SDL_BlendMode::SDL_BLENDMODE_BLEND);
+    rend = SDL_CreateRenderer(wind, -1, SDL_RENDERER_ACCELERATED);
 
     //Load fonts
     SDL_StartTextInput();

@@ -89,7 +89,7 @@ void altFunc();
 void loadFonts();
 void displayText(std::string sentence, SDL_Rect &textBox, int fontMaxHeight);
 double rad(double degrees);
-void chatGPTinquiry();
+void chatGPTinquiry(std::vector<std::string> words);
 void prepareSprites();
 
 //some useful stuff:
