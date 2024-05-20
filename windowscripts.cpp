@@ -273,9 +273,9 @@ void displayText(std::string sentence, SDL_Rect &textBox, int fontMaxHeight){
  * Starts the python application to send the contents of the text field to chatgpt (python applicaiton)
 */
 void chatGPTinquiry(){
-    std::string allText{""};
-    for(int i = 0; previous_words.size(); i++)
-        allText+=previous_words[i];
+    std::string allText;
+    for(int i = 0; i < previous_words.size(); i++)
+        allText = allText + previous_words[i];
 
     allowedToType = false;
     pyclink::communicate("./chatbot.exe", allText.c_str(), &answer, 5000, true);
@@ -284,7 +284,7 @@ void chatGPTinquiry(){
 }
 
 /**
- * A function which waits for chatgpt response.
+ * A function which waits for chatgpt's response.
 */
 void updateResponse(){
     if(answer != "-"){
@@ -292,8 +292,8 @@ void updateResponse(){
         textinput.clear();
         for(int i = 0; i < strlen(answer); i++)
             textinput += answer[i];
+        answer = (char*)"-";
     }
-    answer = (char*)"-";
     return;
 }
 
