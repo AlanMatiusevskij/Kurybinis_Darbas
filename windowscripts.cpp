@@ -259,7 +259,7 @@ void updateResponse(){
     return;
 }
 
-w/*stupidly slow
+/*stupidly slow
     COLORREF key;
     Get device context - in this case, whole display
     HDC hdc = GetDC(NULL);    

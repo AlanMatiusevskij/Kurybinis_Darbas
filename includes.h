@@ -61,24 +61,24 @@ int fontSize = 24;
 SDL_Color colors[256];
 
 enum kaulu_ilgiai{
-    blauzdos_ilg = 45,
-    slaunies_ilg = 65,
-    ausies_ilg = 5,
+    blauzdos_ilg = 55,
+    slaunies_ilg = 75,
+    ausies_ilg = -50,
     galvos_ilg = 40,
-    rankos_ilg = 30,
+    rankos_ilg = 40,
     kuno_ilg = 60,
 };
-int ground = blauzdos_ilg + slaunies_ilg; //ŠITAS GALI TURĖTI BŪTI ŠIEK TIEK ILGESNIS UŽ ATSTUMĄ NUO DUBENS IR KOJŲ GALŲ NUOTRAUKOS.
+int ground = blauzdos_ilg + slaunies_ilg + 5; //ŠITAS GALI TURĖTI BŪTI ŠIEK TIEK ILGESNIS UŽ ATSTUMĄ NUO DUBENS IR KOJŲ GALŲ NUOTRAUKOS.
 /**
  * Kiek kartu sumazinti originalu sprite.
 */
 enum class sumazinti{
-    kojas = 3,
-    kuneli = 4,
-    galva = 4,
-    ausis = 1,
-    rankas = 3,
-    veida = 1
+    kojas = 6,
+    kuneli = 8,
+    galva = 8,
+    ausis = 10,
+    rankas = 7,
+    veida = 8
 
 };
 enum{

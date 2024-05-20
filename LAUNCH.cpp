@@ -71,5 +71,6 @@ void INITIALIZE(){
 
     createCharacterBones();
     prepareSprites();
+
     return;
 }
