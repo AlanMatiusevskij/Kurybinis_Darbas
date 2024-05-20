@@ -9,7 +9,7 @@
 #include<ft2build.h>
 #include FT_FREETYPE_H
 
-#include<PyC-Link/pyclink.h>
+#include<PyCLink/pyclink.h>
 
 #include<SDL2/SDL.h>
 #include<SDL2/SDL_syswm.h>
@@ -57,7 +57,7 @@ pixel_struct charStartingPos = {400,100};
 std::string textinput{};
 FT_Library ft;
 FT_FaceRec_* face;
-int fontSize = 17;
+int fontSize = 24;
 SDL_Color colors[256];
 
 enum kaulu_ilgiai{
@@ -89,7 +89,9 @@ void altFunc();
 void loadFonts();
 void displayText(std::string sentence, SDL_Rect &textBox, int fontMaxHeight);
 double rad(double degrees);
+void chatGPTinquiry();
 void prepareSprites();
+
 //some useful stuff:
     // std::cout << ("\033[31mThis is red font.\033[0m") << "\n";
     // std::cout << ("\033[32mThis is green font.\033[0m")<< "\n";

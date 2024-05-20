@@ -19,13 +19,15 @@ BITMAPINFO bitmap;
 bool altLMBPress = false;
 bool altRMBPress = false;
 bool textInputReady = false;
-
+bool allowedToType = true;
 struct word{
     SDL_Texture* texture;
     SDL_Rect pos;
 };
 std::vector<std::string> previous_words{};
 std::vector<word> words{};
+
+char* answer = (char*)"-";
 
 /**
  * Gets various information about the screen bitmap and saves it to an array ("bitpointer");
@@ -119,11 +121,11 @@ void textInputFunctionallity(){
     SDL_RenderDrawRect(rend, &textRect);
 
     //Gauti tekstą/užklausą.
-    if(evt.type == SDL_TEXTINPUT){
+    if(evt.type == SDL_TEXTINPUT && allowedToType){
         textinput.insert(typeIndex, std::string(evt.text.text));
         typeIndex++;
     }
-    if(evt.type == SDL_KEYDOWN){
+    if(evt.type == SDL_KEYDOWN && allowedToType){
         switch(evt.key.keysym.sym){
             case SDLK_BACKSPACE:
                 if(textinput.size() > 0){
@@ -139,6 +141,9 @@ void textInputFunctionallity(){
                 break;
             case SDLK_RIGHT:
                 typeIndex++;
+                break;
+            case SDLK_RETURN:
+                chatGPTinquiry();
                 break;
         }
         textinput.shrink_to_fit();
@@ -177,8 +182,6 @@ void displayText(std::string sentence, SDL_Rect &textBox, int fontMaxHeight){
     std::vector<std::string> words_str;
     std::string individual_word{""};
     FT_Bitmap ftbitmap;
-    int currentWidth = 2;
-    int currentHeight = fontMaxHeight + 2;
 
     for(int i = 0; i < sentence.size(); i++){
         if(sentence[i] == ' '){
@@ -223,13 +226,13 @@ void displayText(std::string sentence, SDL_Rect &textBox, int fontMaxHeight){
             
             //Decide whether the word goes into a new line.
             if(total_width + 1 >= textBox.w){
-                y+=35;
-                total_width = 1;
+                y+=30;
+                total_width = individual_width;
                 start_pos = 1;
             }
-
+            
             //Integrate all letters into a single surface.
-            SDL_Surface* word_surf = SDL_CreateRGBSurfaceWithFormat(0, individual_width, 30, 8, individual_letter_surfc[0]->format->format);;
+            SDL_Surface* word_surf = SDL_CreateRGBSurfaceWithFormat(0, individual_width + individual_letter_surfc.size(), 28, 8, SDL_PixelFormatEnum::SDL_PIXELFORMAT_INDEX8);
             int tmp_x = 0;
             
             for(int i = 0; i < individual_letter_surfc.size(); i++){
@@ -238,8 +241,9 @@ void displayText(std::string sentence, SDL_Rect &textBox, int fontMaxHeight){
                 SDL_Rect tmprect = {tmp_x, fontMaxHeight-(*surfc)->h+belowBaseLine[i], 0, 0};
                 SDL_BlitSurface((*surfc), NULL, word_surf, &tmprect);
 
-                tmp_x += (*surfc)->w;
+                tmp_x += (*surfc)->w + 1;
             }
+
             //Set surface colors.
             SDL_SetPaletteColors(word_surf->format->palette, colors, 0, 256);
             SDL_SetSurfaceBlendMode(word_surf, SDL_BlendMode::SDL_BLENDMODE_BLEND);
@@ -248,16 +252,14 @@ void displayText(std::string sentence, SDL_Rect &textBox, int fontMaxHeight){
             int i = words.size();
             words.resize(i + 1);
             words[i].texture = SDL_CreateTextureFromSurface(rend, word_surf);
-            words[i].pos = {start_pos, y, individual_width, 30};
-            total_width += 4;
+            SDL_SetTextureBlendMode(words[i].texture, SDL_BlendMode::SDL_BLENDMODE_BLEND);
+            words[i].pos = {start_pos + textBox.x, y + textBox.y, individual_width, 30};
+            total_width += 6;
 
             //Clean up.
             SDL_FreeSurface(word_surf);
             for(int i = 0; i < individual_letter_surfc.size(); i++)
                 SDL_FreeSurface(individual_letter_surfc[i]);
-    
-
-            //     SDL_RenderCopy(rend, texture, NULL, &dest);   
         }
     }
     
@@ -266,6 +268,35 @@ void displayText(std::string sentence, SDL_Rect &textBox, int fontMaxHeight){
         SDL_RenderCopy(rend, words[i].texture, NULL, &words[i].pos);
     return;
 }
+
+/**
+ * Starts the python application to send the contents of the text field to chatgpt (python applicaiton)
+*/
+void chatGPTinquiry(){
+    std::string allText{""};
+    for(int i = 0; previous_words.size(); i++)
+        allText+=previous_words[i];
+
+    allowedToType = false;
+    pyclink::communicate("./chatbot.exe", allText.c_str(), &answer, 5000, true);
+
+    return;
+}
+
+/**
+ * A function which waits for chatgpt response.
+*/
+void updateResponse(){
+    if(answer != "-"){
+        allowedToType = true;
+        textinput.clear();
+        for(int i = 0; i < strlen(answer); i++)
+            textinput += answer[i];
+    }
+    answer = (char*)"-";
+    return;
+}
+
 /*stupidly slow
     COLORREF key;
     Get device context - in this case, whole display
