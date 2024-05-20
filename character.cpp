@@ -26,26 +26,40 @@ struct JOINT_STRUCT{
     double y;
 };
 enum jointNames{
-    K_PEDA = 0,
-    K_KELIS = 1,
-    D_PEDA = 2,
-    D_KELIS = 3,
-    DUBUO = 4,
-    JOINT_COUNT = 5
+    K_AUSIS = 0,
+    D_AUSIS = 1,
+    GALVA = 2,
+    K_BLAUZDA = 3,
+    D_BLAUZDA = 4,
+    K_SLAUNIS = 5,
+    D_SLAUNIS = 6,
+    KUNELIS = 7,
+    K_RANKA = 8,
+    D_RANKA = 9,
+    
+    JOINT_COUNT = 10
 };
-enum spriteIndexes{
-  //category_*kategorijosPavadinimas*, category*KategorijosPavadinimas*_SpriteNumb, *kategorija*_*nuotraukosPavadinimas*. (nuotrauka=sprite)
-    category_test = 0, categoryTest_SpriteNumb = 2, test_koja = 0, test_kunelis = 1,
 
-    //Kiek iš viso kategorijų.
-    totalSpriteCategoryNumb = 1
+//Sprites
+int totalSpriteCategoryNumb = 2;
+enum class category_test{
+    TEST = 0,
+    SPRITE_NUMB = 2,
+    
+    koja = 0, kunelis = 1
 };
+enum class category_pasuktas{
+    PASUKTAS = 1,
+    SPRITE_NUMB = 8,
+    
+    ausis_gale = 0, ausis_priekyje = 1, galva = 2, koja_gale = 3, koja_priekyje = 4, kunelis = 5, ranka_priekyje = 6, veidas = 7
+};
+
 //Išsaugoma 'SDL_Rect' pozicija ir 'SDL_Texture' sprite informacija kiekvienai nuotraukai. 
 struct spriteInfo{
     SDL_Surface* img_data;
     SDL_Texture* img;
 };
-int feet_index[2] = {K_PEDA, D_PEDA};
 int destinationME = 5;
 double g = 0.05;
 /*sprites[kategorijos indeksas][kategorijoje esancios nuotraukos indeksas]*/
@@ -94,12 +108,18 @@ void actuallyCreateCharacterBones(int indeksas, double baseAngle, double minAngl
 */
 void createCharacterBones(){
     joints.resize(JOINT_COUNT);
-    joints[DUBUO] = {pi_2, 0, 0, 0, 0, 0, (double)charStartingPos.x, (double)charStartingPos.y};
+    //Kurie neturi judėti visiškai
+    joints[KUNELIS] = {pi_2, 0, 0, 0, 0, 0, (double)charStartingPos.x, (double)charStartingPos.y};
+    joints[GALVA] = {pi_2, 0, 0, 0, 0, 0, (double)charStartingPos.x, (double)charStartingPos.y - kuno_ilg};
 
-    actuallyCreateCharacterBones(K_KELIS, rad(88), rad(78), rad(180-78), thigh, dideja);
-    actuallyCreateCharacterBones(D_KELIS, rad(92), rad(78), rad(180-78), thigh, mazeja);
-    actuallyCreateCharacterBones(K_PEDA, rad(88), rad(90), rad(180-60), calf, dideja);
-    actuallyCreateCharacterBones(D_PEDA, rad(92), rad(90), rad(180-60), calf, mazeja);
+    actuallyCreateCharacterBones(K_AUSIS, rad(88), rad(88), rad(180-88), ausies_ilg, dideja);
+    actuallyCreateCharacterBones(D_AUSIS, rad(92), rad(88), rad(180-88), ausies_ilg, mazeja); 
+    actuallyCreateCharacterBones(K_SLAUNIS, rad(88), rad(78), rad(180-78), slaunies_ilg, dideja);
+    actuallyCreateCharacterBones(D_SLAUNIS, rad(92), rad(78), rad(180-78), slaunies_ilg, mazeja);
+    actuallyCreateCharacterBones(K_BLAUZDA, rad(88), rad(90), rad(180-60), blauzdos_ilg, dideja);
+    actuallyCreateCharacterBones(D_BLAUZDA, rad(92), rad(90), rad(180-60), blauzdos_ilg, mazeja);
+    actuallyCreateCharacterBones(K_RANKA, rad(90), rad(85), rad(180-85), rankos_ilg, dideja);
+    actuallyCreateCharacterBones(D_RANKA, rad(90), rad(85), rad(180-85), rankos_ilg, mazeja);
 
     updateBones();
     return;
