@@ -26,7 +26,6 @@ int main(int argc, char *argv[]){
         
         processCharacter();
         if(textInputReady) textInputFunctionallity();
-
         //Laukti chatgbt atsakymo
         if(allowedToType == false)
             updateResponse();
@@ -51,7 +50,7 @@ void INITIALIZE(){
     if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_TIMER)) std::cout << "Failed to initialize SDL!\n";
     if(FT_Init_FreeType(&ft)) std::cout << "Failed to initialize FreeType library!\n";
 
-    wind = SDL_CreateWindow(WIND_TITLE.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_ALWAYS_ON_TOP);
+    wind = SDL_CreateWindow(WIND_TITLE.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, 0);//SDL_WINDOW_ALWAYS_ON_TOP
     rend = SDL_CreateRenderer(wind, -1, SDL_RENDERER_ACCELERATED);
 
     //Load fonts

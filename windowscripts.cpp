@@ -28,7 +28,6 @@ char* answer = (char*)"-";
  * Gets various information about the screen bitmap and saves it to an array ("bitpointer");
 */
 void getScreenPixelInfo(){
-    //need to make sure we dont create duplicates
     DeleteDC(hdcMemory);
     ReleaseDC(hWnd, hdc); 
     hdc = GetDC(HWND_DESKTOP);
@@ -46,7 +45,9 @@ void getScreenPixelInfo(){
     HBITMAP hbitmap = CreateDIBSection(hdcMemory, &bitmap, DIB_RGB_COLORS, (void**)(&bitPointer), NULL, purposeIsToRemoveWarning);
     SelectObject(hdcMemory, hbitmap);
     BitBlt(hdcMemory, 0, 0, WIDTH, HEIGHT, hdc, 0, 0, SRCCOPY);
+
     DeleteObject(hbitmap);
+    
     //without 2 of 'delete' and 1 of 'release' memory increases +~30mb/s until program crashes
     return;
 }

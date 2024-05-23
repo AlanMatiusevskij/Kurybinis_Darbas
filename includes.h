@@ -63,9 +63,9 @@ SDL_Color colors[256];
 enum kaulu_ilgiai{
     blauzdos_ilg = 55,
     slaunies_ilg = 75,
-    ausies_ilg = -50,
-    galvos_ilg = 40,
-    rankos_ilg = 40,
+    ausies_ilg = -60,
+    galvos_ilg = -30,
+    rankos_ilg = 10,
     kuno_ilg = 60,
 };
 int ground = blauzdos_ilg + slaunies_ilg + 5; //ŠITAS GALI TURĖTI BŪTI ŠIEK TIEK ILGESNIS UŽ ATSTUMĄ NUO DUBENS IR KOJŲ GALŲ NUOTRAUKOS.

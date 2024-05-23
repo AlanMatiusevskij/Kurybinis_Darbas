@@ -1,7 +1,7 @@
 #include"includes.h"
 /*
     Apie:
-        Visos funkcijos susijusios su veikėju. Variables laikome 'includes.h' faile, nes juos gali reikėti kitoms funkcijoms keisti
+        Visos funkcijos susijusios su veikėju. Nesuprantu headeriu, bet palikim kaip dabar yra, nes neveikia kaip pasakiau. -> Variables laikome 'includes.h' faile, nes juos gali reikėti kitoms funkcijoms keisti
     Bugs:
         -
 */
@@ -42,20 +42,28 @@ enum jointNames{
 int CURRENTCATEGORY, CURRENTSPRITENUMB;
 
 //Sprites
-int totalSpriteCategoryNumb = 2;
+int totalSpriteCategoryNumb = 3;
 enum class category_test{
     TEST = 0,
     SPRITE_NUMB = 2,
     
     koja = 0, kunelis = 1
 };
-int pasuktas_order[8] = {3, 5,4,6, 0, 2, 7, 1};
 enum class category_pasuktas{
     PASUKTAS = 1,
     SPRITE_NUMB = 8,
     
     ausis_gale = 0, ausis_priekyje = 1, galva = 2, koja_gale = 3, koja_priekyje = 4, kunelis = 5, ranka_priekyje = 6, veidas = 7
 };
+enum class category_stovintis{
+    STOVINTIS = 2,
+    SPRITE_NUMB = 6,
+
+    ausys = 0, galva = 1, kojos = 2, kunelis = 3, neutralus_veidas = 4, rankos = 5
+};
+
+//Eiliškumas, pirmas kategoriju skaicius, antras SPRITE_NUMB.
+std::vector<std::vector<int>> sprite_eiliskumas;
 
 //Išsaugoma 'SDL_Rect' pozicija ir 'SDL_Texture' sprite informacija kiekvienai nuotraukai. 
 struct spriteInfo{
@@ -142,6 +150,7 @@ void connectbones(jointNames connect, jointNames to){
 }
 void updateBones(){
     connectbones(GALVA, KUNELIS);
+    joints[GALVA].y += galvos_ilg;
     connectbones(K_AUSIS, GALVA);
     connectbones(D_AUSIS, GALVA);
     connectbones(K_RANKA, KUNELIS);
@@ -251,34 +260,46 @@ void animate(){
     return;
 }
 
-void prepASprite(const char* path, int category, int obj, SDL_Renderer* renderer, int jointindex, int mazinti){
+void prepASprite(const char* path, int category, int sprite, SDL_Renderer* renderer, int jointindex, int mazinti){
     SDL_Surface* tmpsurfc;
     tmpsurfc = SDL_LoadBMP(path);
 
-    sprites[category][obj].img_data = tmpsurfc;
-    sprites[category][obj].img = SDL_CreateTextureFromSurface(renderer, tmpsurfc);
+    sprites[category][sprite].img_data = new SDL_Surface{*tmpsurfc};
+    sprites[category][sprite].img = SDL_CreateTextureFromSurface(renderer, tmpsurfc);
 
-    sprites[category][obj].joint_index = jointindex;
-    sprites[category][obj].length = mazinti;
+    sprites[category][sprite].joint_index = jointindex;
+    sprites[category][sprite].length = mazinti;
 
     SDL_FreeSurface(tmpsurfc);
     return;
 }
 
 void prepareSprites(){
-    SDL_Surface* tmpSurfc{};
     spritePositions.resize(JOINT_COUNT);
     sprites.resize(totalSpriteCategoryNumb);
     sprites[(int)category_pasuktas::PASUKTAS].resize((int)category_pasuktas::SPRITE_NUMB);
+    sprites[(int)category_stovintis::STOVINTIS].resize((int)category_stovintis::SPRITE_NUMB);
 
     prepASprite("./assets/images/pasuktas/ausis_gale.bmp", (int)category_pasuktas::PASUKTAS, (int)category_pasuktas::ausis_gale, rend, K_AUSIS, (int)sumazinti::ausis);
     prepASprite("./assets/images/pasuktas/ausis_priekyje.bmp", (int)category_pasuktas::PASUKTAS, (int)category_pasuktas::ausis_priekyje, rend, D_AUSIS, (int)sumazinti::ausis);
-    prepASprite("./assets/images/pasuktas/galva.bmp", (int)category_pasuktas::PASUKTAS, (int)category_pasuktas::galva, rend, -1, (int)sumazinti::galva);
+    prepASprite("./assets/images/pasuktas/galva.bmp", (int)category_pasuktas::PASUKTAS, (int)category_pasuktas::galva, rend, GALVA, (int)sumazinti::galva);
     prepASprite("./assets/images/pasuktas/koja_gale.bmp", (int)category_pasuktas::PASUKTAS, (int)category_pasuktas::koja_gale, rend, K_SLAUNIS, (int)sumazinti::kojas);
     prepASprite("./assets/images/pasuktas/koja_priekyje.bmp", (int)category_pasuktas::PASUKTAS, (int)category_pasuktas::koja_priekyje, rend, D_SLAUNIS, (int)sumazinti::kojas);
     prepASprite("./assets/images/pasuktas/kunelis.bmp", (int)category_pasuktas::PASUKTAS, (int)category_pasuktas::kunelis, rend, KUNELIS, (int)sumazinti::kuneli);
     prepASprite("./assets/images/pasuktas/ranka_priekyje.bmp", (int)category_pasuktas::PASUKTAS, (int)category_pasuktas::ranka_priekyje, rend, K_RANKA, (int)sumazinti::rankas);
-    prepASprite("./assets/images/pasuktas/veidas.bmp", (int)category_pasuktas::PASUKTAS, (int)category_pasuktas::veidas, rend, -1, (int)sumazinti::veida);
+    prepASprite("./assets/images/pasuktas/veidas.bmp", (int)category_pasuktas::PASUKTAS, (int)category_pasuktas::veidas, rend, GALVA, (int)sumazinti::veida);
+    
+    prepASprite("./assets/images/stovintis/ausys.bmp", (int)category_stovintis::STOVINTIS, (int)category_stovintis::ausys, rend, -1, (int)sumazinti::ausis);
+    prepASprite("./assets/images/stovintis/galva.bmp", (int)category_stovintis::STOVINTIS, (int)category_stovintis::galva, rend, GALVA, (int)sumazinti::galva);
+    prepASprite("./assets/images/stovintis/kojos.bmp", (int)category_stovintis::STOVINTIS, (int)category_stovintis::kojos, rend, -1, (int)sumazinti::kojas);
+    prepASprite("./assets/images/stovintis/kunelis.bmp", (int)category_stovintis::STOVINTIS, (int)category_stovintis::kunelis, rend, KUNELIS, (int)sumazinti::kuneli);
+    prepASprite("./assets/images/stovintis/neutralus_veidas.bmp", (int)category_stovintis::STOVINTIS, (int)category_stovintis::neutralus_veidas, rend, GALVA, (int)sumazinti::veida);
+    prepASprite("./assets/images/stovintis/rankos.bmp", (int)category_stovintis::STOVINTIS, (int)category_stovintis::rankos, rend, -1, (int)sumazinti::rankas);
+
+    sprite_eiliskumas.resize(totalSpriteCategoryNumb);
+    //sprite_eiliskumas[(int)category_test::TEST].resize((int)category_test::SPRITE_NUMB);
+    sprite_eiliskumas[(int)category_pasuktas::PASUKTAS].resize((int)category_pasuktas::SPRITE_NUMB); sprite_eiliskumas[(int)category_pasuktas::PASUKTAS] = {3, 5, 4, 6, 0, 2, 7, 1};
+    sprite_eiliskumas[(int)category_stovintis::STOVINTIS].resize((int)category_stovintis::SPRITE_NUMB); sprite_eiliskumas[(int)category_stovintis::STOVINTIS] = {2, 3, 0, 1, 4, 5};
 
     return;
 }
@@ -288,38 +309,56 @@ void prepareSprites(){
  * @param sprite_info tai nuotraukos informacijos struct'as. Jį duoti funkcijai iš vektoriaus: sprites[kategorijos indeksas][nuotraukos indeksas]
  * @param to_flip nusako, ar nuotrauka turi būti apversta. 0 - ne, 1 - horizontaliai apversti.
 */
-void renderSprite(spriteInfo& sprite_info, int to_flip, int i){
+void renderSprite(spriteInfo& sprite_info, int to_flip, int img){
     int x = sprite_info.joint_index;
     if(sprite_info.joint_index == -1){
-        if(i == (int)category_pasuktas::galva){
-            x = GALVA;
-            spritePositions[GALVA] = {(int)joints[KUNELIS].x - sprite_info.img_data->w/(2*sprite_info.length), (int)joints[KUNELIS].y - galvos_ilg, sprite_info.img_data->w/sprite_info.length, sprite_info.img_data->h/sprite_info.length};
+        if(CURRENTCATEGORY == (int)category_pasuktas::PASUKTAS){
+            // if(img == (int)category_pasuktas::galva){
+            //     x = GALVA;
+            //     spritePositions[GALVA] = {(int)joints[KUNELIS].x - sprite_info.img_data->w/(2*sprite_info.length) + 10, (int)joints[KUNELIS].y + galvos_ilg, sprite_info.img_data->w/sprite_info.length, sprite_info.img_data->h/sprite_info.length};
+            //     if(velX < 0) spritePositions[GALVA].x -= 20;
+            // }
+            if(img == (int)category_pasuktas::veidas)
+                x = GALVA;
         }
-        if(i == (int)category_pasuktas::veidas){//20 -20
-            x = GALVA;
-            //spritePositions[GALVA] = {(int)joints[KUNELIS].x - sprite_info.img_data->w/(2*sprite_info.length), (int)joints[KUNELIS].y - galvos_ilg, sprite_info.img_data->w/sprite_info.length, sprite_info.img_data->h/sprite_info.length};
+        if(CURRENTCATEGORY == (int)category_stovintis::STOVINTIS){
+            if(img == (int)category_stovintis::ausys){
+                x = GALVA;
+                spritePositions[x].y += ausies_ilg;
+            }
+            if(img == (int)category_stovintis::kojos){
+                x = KUNELIS;
+                spritePositions[x].y += kuno_ilg;
+            }
+            if(img == (int)category_stovintis::rankos){
+                x = KUNELIS;
+                spritePositions[x].y += rankos_ilg;
+            }
         }
     }
     else
-        spritePositions[sprite_info.joint_index] = {(int)joints[sprite_info.joint_index].x - sprite_info.img_data->w/(2*sprite_info.length), (int)joints[sprite_info.joint_index].y, sprite_info.img_data->w/sprite_info.length, sprite_info.img_data->h/sprite_info.length};
-    
+        spritePositions[x] = {(int)joints[x].x - sprite_info.img_data->w/(2*sprite_info.length), (int)joints[x].y, sprite_info.img_data->w/sprite_info.length, sprite_info.img_data->h/sprite_info.length};
     SDL_RenderCopyEx(rend, sprite_info.img, NULL, &spritePositions[x], joints[x].ANGLE*180/pi - 90, new SDL_Point{sprite_info.img_data->w/(2*sprite_info.length), 0}, (SDL_RendererFlip)to_flip);
     return;
 }
 
 void applySprites(){
     int flip;
-    if(velX != 0 || velX == 0){
+    //Ėjimas
+    if(velX != 0){
         CURRENTCATEGORY = (int)category_pasuktas::PASUKTAS;
         CURRENTSPRITENUMB = (int)category_pasuktas::SPRITE_NUMB;
     }
-    //else currentactegory = stovintis;
+    else{
+        CURRENTCATEGORY = (int)category_stovintis::STOVINTIS;
+        CURRENTSPRITENUMB = (int)category_stovintis::SPRITE_NUMB;
+    }
 
-    if(velX >= 0) flip = 0; //dont flip
+    if(velX >= 0) flip = 0; //don't flip
     if(velX < 0) flip = 1;  //do flip
 
-    for(int i : pasuktas_order)
-        renderSprite(sprites[CURRENTCATEGORY][i], flip, i);
+    for(int img : sprite_eiliskumas[CURRENTCATEGORY])
+        renderSprite(sprites[CURRENTCATEGORY][img], flip, img);
 
     return;
 }
