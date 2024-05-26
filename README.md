@@ -43,7 +43,7 @@ Komandas rašyti į terminalą. Kai matote `+`, tai toje vietoje įrašykite, ko
 2) Atidaryti terminalą ir įrašyti.
    * `mingw32-make`, kad sukompiliuoti programą.
      
-Viskas, galite rasti ir atidaryti **main.exe** failą arba atidaryti per terminalą `./main`.
+Viskas, galite rasti ir atidaryti **Petto.exe** failą arba atidaryti per terminalą `./petto`.
 
 ## Kaip sukurti python programą
 1) Atidaryti jūsų IDE (arba cmd) kaip administratorius.
