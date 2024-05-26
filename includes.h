@@ -15,6 +15,7 @@
 #include<SDL2/SDL_syswm.h>
 
 #include<iostream>
+#include<cstring>
 #include<fstream>
 #include<vector>
 #include<string>
@@ -28,8 +29,7 @@ struct pixel_struct{
     int x;
     int y;
 };
-
-const std::string WIND_TITLE{"Petto"};
+const char* WIND_TITLE = "Petto";
 //x daugyba; _ dalyba
 const double pi = 3.14159265359, pix2 = 6.28318530718, pi_2 = 1.57079632679, pix3_2 = 4.71238898038; 
 //updates per second
@@ -38,7 +38,7 @@ int UPS = 144;
 int WIDTH = GetSystemMetrics(SM_CXSCREEN), HEIGHT = GetSystemMetrics(SM_CYSCREEN);
 //spalva, kurią langas visiškai ignoruos
 SDL_Color COLOR_TO_IGNORE = {0,0,0,255};
-//koks didžiausias spalvų skirtumas leistinas prieš nuskaitant naują platformą
+//koks didžiausias šviesos skirtumas leistinas nuskaitant naują platformą
 int platformScanColorME = 5;
 //Pagrindiniai SDL variables
 SDL_Window* wind;
@@ -50,9 +50,6 @@ HWND hWnd;
 SDL_Rect textRect;
 //Pelės pozicija
 int mx, my;
-double velY = 0, velX = 0; //velocity
-//Kai kurie veikėjo duomenys
-pixel_struct charStartingPos = {400,100};
 //Text box input
 std::string textinput{};
 FT_Library ft;
@@ -60,49 +57,31 @@ FT_FaceRec_* face;
 int fontSize = 24;
 SDL_Color colors[256];
 
-enum kaulu_ilgiai{
-    blauzdos_ilg = 55,
-    slaunies_ilg = 75,
-    ausies_ilg = -60,
-    galvos_ilg = -30,
-    rankos_ilg = 10,
-    kuno_ilg = 60,
-};
-int ground = blauzdos_ilg + slaunies_ilg + 5; //ŠITAS GALI TURĖTI BŪTI ŠIEK TIEK ILGESNIS UŽ ATSTUMĄ NUO DUBENS IR KOJŲ GALŲ NUOTRAUKOS.
-/**
- * Kiek kartu sumazinti originalu sprite.
-*/
-enum class sumazinti{
-    kojas = 6,
-    kuneli = 8,
-    galva = 8,
-    ausis = 10,
-    rankas = 7,
-    veida = 8
-
-};
-enum{
-    dideja = 1,
-    mazeja = -1
-};
-
 //Visi platformų taškai
 std::vector<int> platformPoints;
-//Taskai, iki kurių nueiti.
-std::vector<pixel_struct> togoPoints;
+
+namespace petto{
+    pixel_struct target_point; //kur nueiti;
+
+    /**
+     * 
+    */
+    void processCharacter();
+    /**
+     * 
+    */
+    void createCharacter();
+}
+
 
 //Defining functions (nesvarbus eiliškumas, tiesiog jų sąrašas, BET čia funkcijų neturi būti, jeigu jos neiškviečiamos iš kitų scriptų (pvz INITIALIZE nėra))
 std::vector<int> GETSCREENGROUND(int colorME);
 bool MakeWindowTranparent();
-void createCharacterBones();
 void startPlatformScanThread();
-void processCharacter();
 void altFunc();
 void loadFonts();
 void displayText(std::string sentence, SDL_Rect &textBox, int fontMaxHeight);
-double rad(double degrees);
 void chatGPTinquiry(std::vector<std::string> words);
-void prepareSprites();
 
 //some useful stuff:
     // std::cout << ("\033[31mThis is red font.\033[0m") << "\n";

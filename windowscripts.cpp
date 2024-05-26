@@ -87,7 +87,7 @@ void altFunc(){
     if(GetAsyncKeyState(VK_LBUTTON) == 0 && altLMBPress) altLMBPress = false;
     if(GetAsyncKeyState(VK_LBUTTON) != 0 && !altLMBPress){
         altLMBPress = true;
-        togoPoints.push_back({mx, -1});
+        petto::target_point = {mx, -1};
     }
 
     if(GetAsyncKeyState(VK_RBUTTON) != 0 && !altRMBPress) textRect = {mx, my, 0, 0};
@@ -203,7 +203,7 @@ void displayText(std::string sentence, SDL_Rect &textBox, int fontMaxHeight){
             //Create a surface and apply palette's colros
             SDL_Surface* glyph = SDL_CreateRGBSurfaceFrom(ftbitmap.buffer, ftbitmap.width, ftbitmap.rows, 8, ftbitmap.pitch, 0, 0, 0, 0xFF);
             SDL_SetPaletteColors(glyph->format->palette, colors, 0, 256);
-            SDL_SetSurfaceBlendMode(glyph, SDL_BlendMode::SDL_BLENDMODE_BLEND);            
+            SDL_SetSurfaceBlendMode(glyph, SDL_BlendMode::SDL_BLENDMODE_ADD);            
 
             //Create the 'letterbox'.
             int belowBaseLine = (face->glyph->metrics.height - face->glyph->metrics.horiBearingY)/55;    
