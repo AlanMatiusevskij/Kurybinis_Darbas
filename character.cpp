@@ -23,32 +23,43 @@ namespace petto{
         int STOVINTIS = 1;
     }CATEGORY;
     struct{
-        int NUMB = 8;
+        int NUMB = 7;
 
         int AUSIS_GALE;
         int AUSIS_PRIEKYJE;
-        int GALVA;
+        int NEUTRALUS_GALVA;
         int KOJA_GALE;
         int KOJA_PRIEKYJE;
         int KUNELIS;
         int RANKA_PRIEKYJE;
-        int NEUTRALUS_VEIDAS;
     }PASUKTAS;
     struct{
-        int NUMB = 6;
+        int NUMB = 5;
 
         int AUSYS;
-        int GALVA;
+        int NEUTRALUS_GALVA;
         int KOJOS;
         int KUNELIS;
-        int NEUTRALUS_VEIDAS;
         int RANKOS;
     }STOVINTIS;
+    
+    struct{
+        int STOVINTIS = 0;
+        int EINANTIS = 1;
+    }ANIMATIONS;
+    int PREV_anim = ANIMATIONS.STOVINTIS;
+    int CURRENT_anim = ANIMATIONS.STOVINTIS;
+
+    //Stovinčio veikėjo animacija.
+    void animate_STOVINTIS();
 
     /**
      * 
     */
-    void petto::loadBMPs(std::string path, spr &sprite);
+    void loadBMPs(std::string path, spr &sprite);
+    
+    //Funkcija iškviečianti tam tikrą animacijos funkciją.
+    void animate();
 }
 
 void petto::loadBMPs(std::string path, spr &sprite){
@@ -83,9 +94,27 @@ void petto::processCharacter(){
 
     //DECIDE WHERE TO GO
 
-    //use a big brain method;
+    animate();
 
     //move the body
+
+    return;
+}
+
+void petto::animate(){
+    if(CURRENT_anim == ANIMATIONS.STOVINTIS){
+        animate_STOVINTIS();
+    }
+    if(CURRENT_anim == ANIMATIONS.EINANTIS){
+        
+    }
+
+    return;
+}
+
+void petto::animate_STOVINTIS(){
+    //INSTANT CHANGE
+    //Stovincio pozicija, rotations, idle animation.
 
     return;
 }
@@ -96,19 +125,17 @@ void petto::createCharacter(){
     sprites[CATEGORY.PASUKTAS].resize(PASUKTAS.NUMB);
     loadBMPs("pasuktas/ausis_gale", sprites[CATEGORY.PASUKTAS][PASUKTAS.AUSIS_GALE]);
     loadBMPs("pasuktas/ausis_priekyje", sprites[CATEGORY.PASUKTAS][PASUKTAS.AUSIS_PRIEKYJE]);
-    loadBMPs("pasuktas/galva", sprites[CATEGORY.PASUKTAS][PASUKTAS.AUSIS_PRIEKYJE]);
+    loadBMPs("pasuktas/neutralus_galva", sprites[CATEGORY.PASUKTAS][PASUKTAS.NEUTRALUS_GALVA]);
     loadBMPs("pasuktas/koja_gale", sprites[CATEGORY.PASUKTAS][PASUKTAS.KOJA_GALE]);
     loadBMPs("pasuktas/koja_priekyje", sprites[CATEGORY.PASUKTAS][PASUKTAS.KOJA_PRIEKYJE]);
     loadBMPs("pasuktas/ausis_kunelis", sprites[CATEGORY.PASUKTAS][PASUKTAS.KUNELIS]);
-    loadBMPs("pasuktas/neutralus_veidas", sprites[CATEGORY.PASUKTAS][PASUKTAS.NEUTRALUS_VEIDAS]);
     loadBMPs("pasuktas/ranka_priekyje", sprites[CATEGORY.PASUKTAS][PASUKTAS.RANKA_PRIEKYJE]);
 
     sprites[CATEGORY.STOVINTIS].resize(STOVINTIS.NUMB);
     loadBMPs("stovintis/ausys", sprites[CATEGORY.STOVINTIS][STOVINTIS.AUSYS]);
-    loadBMPs("stovintis/galva", sprites[CATEGORY.STOVINTIS][STOVINTIS.GALVA]);
+    loadBMPs("stovintis/neutralus_galva", sprites[CATEGORY.STOVINTIS][STOVINTIS.NEUTRALUS_GALVA]);
     loadBMPs("stovintis/kojos", sprites[CATEGORY.STOVINTIS][STOVINTIS.KOJOS]);
     loadBMPs("stovintis/kunelis", sprites[CATEGORY.STOVINTIS][STOVINTIS.KUNELIS]);
-    loadBMPs("stovintis/neutralus_veidas", sprites[CATEGORY.STOVINTIS][STOVINTIS.NEUTRALUS_VEIDAS]);
     loadBMPs("stovintis/rankos", sprites[CATEGORY.STOVINTIS][STOVINTIS.RANKOS]);
 
     return;

@@ -1,3 +1,5 @@
+//i686-w64-mingw32-g++ -I src/include -L src/lib -o animator animationCreator.cpp  -lmingw32 -lSDL2main -lSDL2 -lfreetype
+
 #include<SDL2/SDL.h>
 
 #include<ft2build.h>
@@ -11,18 +13,21 @@ int HEIGHT = 600;
 
 FT_Library ft;
 FT_FaceRec_* face;
-int font_Size = 12;
+int font_Size = 16;
 SDL_Color colors[256];
 
 SDL_Renderer* rend;
+SDL_Event evt;
 
 struct{
-    SDL_Rect tmp = {20,20, WIDTH-20, font_Size};
+    SDL_Rect tmp = {20,20, 200, 15};
 
-}txtBoxes;
+}boxes;
 
+std::string intToString(int numb);
 void loadFonts(int fontSize);
 void renderText(std::string sentence, SDL_Rect &textBox, int fontMaxHeight);
+void slider(std::string label, int fontSize, SDL_Rect &sliderBox, int &value, int minValue, int maxValue);
 
 int main(int argc, char *argv[]){
     if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_TIMER)) std::cout << "Failed to initialize SDL!\n";
@@ -31,17 +36,18 @@ int main(int argc, char *argv[]){
 
     SDL_Window* wind = SDL_CreateWindow("animator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, 0);
     rend = SDL_CreateRenderer(wind, -1, 0);
-    SDL_Event evt;
-
+    int tmpValue = 50;
     while(true)
     {
         SDL_PollEvent(&evt);
         SDL_SetRenderDrawColor(rend, 30,30,30,255);
         SDL_RenderClear(rend);
+        SDL_SetRenderDrawColor(rend, 255,255,255,255);
 
-        //Possibly a flag to put everything in a single line?
-        //renderText("Heyo daiud huwahd hawuihd ahwuidh iawdu hawidh uih", txtBoxes.tmp, font_Size);
-        //slider
+        // * Possibly a flag to put everything in a single line?
+        //renderText("Heyo daiud huwahd hawuihd ahwuidh iawdu hawidh uih", boxes.tmp, font_Size);
+        
+        //slider("skaiciai: $ * 0.1", font_Size, boxes.tmp, tmpValue, 0 ,100);
 
         if(evt.type == SDL_QUIT)
             break;
@@ -136,44 +142,53 @@ void renderText(std::string sentence, SDL_Rect &textBox, int fontSize){
     return;
 }
 
-// /**
-//  * 
-// */
-// void slider(SDL_Renderer* renderer, SDL_Event* event, int ID, std::string label, int label_rect_ID, double* value, double start_value, double end_value, bool* moving, int x, int y, int w, int h){
-//     //Draw the bar
-//     for(int i = 0; i < h; i++)
-//         SDL_RenderDrawLine(renderer, x, y + i, x + w, y + i);
-//     //Notch/button thing
-//     if(onButton(ID))
-//         if(event->type == SDL_MOUSEBUTTONDOWN && event->button.button == SDL_BUTTON_LEFT){
-//             xStart = MOUSEx;
-//             *moving = true;
-//         }
-//     if(event->type == SDL_MOUSEMOTION && *moving){
-//         xEnd = MOUSEx;
-//         *value = (xEnd - xStart) * (end_value -start_value) / w + *value;
-//         xStart = MOUSEx;
-//     }
-//     //on button up, unclick all buttons
-//     if(event->type == SDL_MOUSEBUTTONUP && event->button.button == SDL_BUTTON_LEFT)
-//         *moving = false;
+/**
+ * Creats a slider inside SDL_Rect;
+ * Assumes that `*rend` and `evt` exists as global variables.
+ * In `label` variable, symbol `$` will be replaced with `value`.
+ * Uses `renderText` function.
+*/
+void slider(std::string label, int fontSize, SDL_Rect &sliderBox, int &value, int minValue, int maxValue){
+    int slider_mx, slider_my;
+    int notch_width = sliderBox.h, notch_height = sliderBox.h;
 
-//     rects[ID].x = x + (*value - start_value )/(end_value - start_value) * w;
-//     if(rects[ID].x < x){
-//         rects[ID].x = x;
-//         *value = start_value;
-//     }
-//     else if(rects[ID].x > x + w){
-//         rects[ID].x = x + w;
-//         *value = end_value;
-//     }
+    SDL_RenderDrawLine(rend, sliderBox.x, sliderBox.y + sliderBox.h/2, sliderBox.x + sliderBox.w - 1, sliderBox.y + sliderBox.h/2);
 
-//     //Label text
-//     SDL_FreeSurface(tsurface);
-//     tsurface = TTF_RenderUTF8_Blended(font, (label.c_str()), {255,255,255,255});
-//     SDL_DestroyTexture(ttexture);
-//     ttexture = SDL_CreateTextureFromSurface(renderer, tsurface);
-//     SDL_RenderCopy(renderer, ttexture, nullptr, &rects[label_rect_ID]);
-//     SDL_RenderDrawRect(renderer, &rects[ID]);
-//     return;
-// }
+    if(SDL_GetMouseState(&slider_mx, &slider_my) & SDL_BUTTON_LMASK && slider_mx >= sliderBox.x && slider_mx < sliderBox.x + sliderBox.w && slider_my >= sliderBox.y && slider_my < sliderBox.y + sliderBox.h){
+        value = (slider_mx-sliderBox.x-notch_width/2)*(maxValue-minValue+notch_width/2)/sliderBox.w;
+        if(value < minValue) value = minValue;
+        if(value > maxValue) value = maxValue;
+    }
+
+    SDL_Rect slider_textbox = {sliderBox.x, sliderBox.y-fontSize-2, sliderBox.w, fontSize};
+    
+    std::string new_label = "";
+    for(int i = 0; i < label.size(); i++){
+        if(label[i] == '$')
+            new_label+=intToString(value);
+        else 
+            new_label+=label[i];
+    }
+    renderText(new_label, slider_textbox, fontSize);
+    
+    SDL_Rect slider_notch = {value*sliderBox.w/(maxValue-minValue+notch_width/2)+sliderBox.x, sliderBox.y+sliderBox.h/2-notch_height/2+1, notch_width, notch_height};
+    SDL_RenderDrawRect(rend, &slider_notch);
+    return;
+}
+
+std::string intToString(int numb){
+    std::string _return_backwards = "";
+
+    if(numb == 0)
+        _return_backwards += "0";
+    while(numb != 0){
+        _return_backwards += char(numb%10+48);
+        numb/=10;
+    }
+
+    std::string _return = "";
+    for(int i = _return_backwards.size()-1; i>=0; i--)
+        _return+=_return_backwards[i];
+
+    return _return;
+}
