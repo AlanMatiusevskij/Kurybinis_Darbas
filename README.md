@@ -17,7 +17,7 @@ Gyvūnėlis ar kitas veikėjas bėgiojantis po ekraną, reaguojantis į įvairiu
 3) Surasti **Edit the system environment variables -> Environment variables -> Path -> New** ir įrašyti kelią `C:\msys64\mingw32\bin` (jeigu nepakeitėte MSYS2 kelio).
 4) Naudoti pasirinktą IDE, rekomenduoju [Visual Studio Code](https://code.visualstudio.com/).
 5) Instaliuoti [git sistemą](https://github.com/git-for-windows/git/releases/download/v2.45.0.windows.1/Git-2.45.0-64-bit.exe).
-6) Instaliuoti [python](https://www.python.org/downloads/release/python-3123/) programavimo kalbą.
+6) Instaliuoti [python](https://www.python.org/ftp/python/3.12.3/python-3.12.3-amd64.exe) programavimo kalbą.
 7) Atidaryti **cmd** kaip administratorius ir įrašyti.
    * `pip install nuitka`, kad instaliuoti nuitka kompiliavimo sistemą.
    
@@ -26,7 +26,7 @@ Gyvūnėlis ar kitas veikėjas bėgiojantis po ekraną, reaguojantis į įvairiu
 Komandas rašyti į terminalą. Kai matote `+`, tai toje vietoje įrašykite, ko reikalaujama.
 
 1) `git clone + nuoroda` atsiųs repository.
-2) `git branch` parodys egzistuojančias šakas. Nuspalvintai pažymėta šaka yra šiuo metu atidaryta.
+2) `git branch -a` parodys egzistuojančias šakas. Nuspalvintai pažymėta šaka yra šiuo metu atidaryta.
 3) `git checkout + šakos_pavadinimas` atidarys nurodytą šaką.
 4) `git pull` atsiųs ir sujungs pakeitimus su naujesne versija tuo metu atidarytos šakos.
 5) `git pull origin + šakos_pavadinimas` atsiųs ir sujungs pakeitimus iš kitos šakos. `origin`, tai repository nuoroda.

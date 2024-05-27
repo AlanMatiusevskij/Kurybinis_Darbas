@@ -272,8 +272,8 @@ void button(std::string label, SDL_Rect textBox, SDL_Rect buttonBox, void (*onCl
     renderText(label, textBox, font_Size);
 
     if(button_mx >= buttonBox.x && button_mx < buttonBox.x + buttonBox.w && button_my >= buttonBox.y && button_my < buttonBox.y + buttonBox.h && evt.type == SDL_MOUSEBUTTONDOWN && evt.button.button == SDL_BUTTON_LEFT){
-        onClick();
         pressedAButton = true;
+        onClick();
     }    
     return;
 }
