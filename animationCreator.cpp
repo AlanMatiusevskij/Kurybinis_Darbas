@@ -20,14 +20,13 @@ SDL_Color colors[256];
 SDL_Renderer* rend;
 SDL_Event evt;
 
-struct{
 
-}boxes;
+int spriteNumb = 6;
 
 std::string intToString(int numb);
 void loadFonts(int fontSize);
-void renderText(std::string sentence, SDL_Rect &textBox, int fontMaxHeight);
-void slider(std::string label, int fontSize, SDL_Rect &sliderBox, int &value, int minValue, int maxValue);
+void renderText(std::string sentence, SDL_Rect textBox, int fontMaxHeight);
+void slider(std::string label, int fontSize, SDL_Rect sliderBox, int &value, int minValue, int maxValue);
 //`*textBox` can be a NULL and the text will be put inside `buttonBox`.
 void button(std::string label, SDL_Rect textBox, SDL_Rect buttonBox, void (*onClick)());
 void loadSprites();
@@ -37,8 +36,10 @@ void selected1();
 void selected2();
 void selected3();
 void selected4();
+void selected5();
+
 struct spr{
-    int rotation = 90;
+    int rotation;
     int x, y;
     int w, h;
     SDL_Texture *txtr;
@@ -64,7 +65,7 @@ int main(int argc, char *argv[]){
     if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_TIMER)) std::cout << "Failed to initialize SDL!\n";
     if(FT_Init_FreeType(&ft)) std::cout << "Failed to initialize FreeType library!\n";
     loadFonts(font_Size);
-    info.resize(5);
+    info.resize(spriteNumb);
     SDL_Window* wind = SDL_CreateWindow("animator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, 0);
     rend = SDL_CreateRenderer(wind, -1, 0);
 
@@ -72,7 +73,6 @@ int main(int argc, char *argv[]){
 
     while(true)
     {
-        pressedAButton = false;
         SDL_PollEvent(&evt);
         SDL_SetRenderDrawColor(rend, 30,30,30,255);
         SDL_RenderClear(rend);
@@ -82,19 +82,29 @@ int main(int argc, char *argv[]){
         //slider("skaiciai: $", font_Size, boxes.tmp, tmpValue, 0 ,100);
         //button("++", &boxes.textArea, boxes.button, &test);
 
-        button("ausys", {21, 30, 40, font_Size}, {20, 20, 40, 40}, &selected0);
-        button("kojos", {21, 80, 40, font_Size}, {20, 70, 40, 40}, &selected1);
-        button("kunelis", {21, 130, 40, font_Size}, {20, 120, 40, 40}, &selected2);
-        button("galva", {21, 180, 40, font_Size}, {20, 170, 40, 40}, &selected3);
-        button("rankos", {21, 230, 40, font_Size}, {20, 220, 40, 40}, &selected4);
+        if(evt.type == SDL_MOUSEBUTTONUP && evt.button.button == SDL_BUTTON_LEFT) pressedAButton = false;
+
+        button("d_ausis", {21, 30, 40, font_Size}, {20, 20, 40, 40}, &selected0);
+        button("k_ausis", {21, 80, 40, font_Size}, {20, 70, 40, 40}, &selected1);
+        button("kojos", {21, 130, 40, font_Size}, {20, 120, 40, 40}, &selected2);
+        button("kunelis", {21, 180, 40, font_Size}, {20, 170, 40, 40}, &selected3);
+        button("galva", {21, 230, 40, font_Size}, {20, 220, 40, 40}, &selected4);
+        button("rankos", {21, 280, 40, font_Size}, {20, 270, 40, 40}, &selected5);
 
         button("capture", {WIDTH-45, 20, 40, font_Size}, {WIDTH-50, 10, 40, 40}, &capture);
         button("clear", {WIDTH-45, 60, 40, font_Size}, {WIDTH-50, 50, 40, 40}, &clearInfo);
         button("save", {WIDTH-45, 100, 40, font_Size}, {WIDTH-50, 90, 40, 40}, &save);
 
+        slider("kampas d_ausis: $", font_Size , {100, 20, 200,20}, sprites[0].rotation, 0, 720);
+        slider("kampas k_ausis: $", font_Size , {100, 60, 200,20}, sprites[1].rotation, 0, 720);
+        slider("kampas kojos: $", font_Size , {100, 100, 200,20}, sprites[2].rotation, 0, 720);
+        slider("kampas kunelis: $", font_Size , {100, 140, 200,20}, sprites[3].rotation, 0, 720);
+        slider("kampas galva: $", font_Size , {100, 180, 200,20}, sprites[4].rotation, 0, 720);
+        slider("kampas rankos: $", font_Size , {100, 220, 200,20}, sprites[5].rotation, 0, 720);
+
         placeRelative();
 
-        for(int i = 0; i < 5; i++)
+        for(int i = 0; i < spriteNumb; i++)
             render(i);
 
         if(evt.type == SDL_QUIT)
@@ -103,13 +113,12 @@ int main(int argc, char *argv[]){
     }
     return 0;
 }
-
-    //ausys kojos kunelis galva rankos
-    //  0     1      2      3     4
+    //d_ausis k_ausis kojos kunelis neutralus_galva rankos
+    //  0       1       2      3       4              5
 
 void clearInfo(){
     info.clear();
-    info.resize(5);
+    info.resize(spriteNumb);
 }
 
 void capture(){
@@ -135,34 +144,40 @@ void render(int i){
     SDL_RenderCopyEx(rend, sprites[i].txtr, NULL, &tmpRect, sprites[i].rotation, NULL, SDL_FLIP_NONE);
 }
 
-void selected0(){ if(currentSelected == 0) currentSelected = -1; else currentSelected = 0;}
-void selected1(){ if(currentSelected == 1) currentSelected = -1; else currentSelected = 1;}
-void selected2(){ if(currentSelected == 2) currentSelected = -1; else currentSelected = 2;}
-void selected3(){ if(currentSelected == 3) currentSelected = -1; else currentSelected = 3;}
-void selected4(){ if(currentSelected == 4) currentSelected = -1; else currentSelected = 4;}
+void selected0(){ currentSelected = 0;}
+void selected1(){ currentSelected = 1;}
+void selected2(){ currentSelected = 2;}
+void selected3(){ currentSelected = 3;}
+void selected4(){ currentSelected = 4;}
+void selected5(){ currentSelected = 5;}
 
 void loadSprites(){
     SDL_Surface *tmpSurfc;
 
-    tmpSurfc = SDL_LoadBMP("./assets/images/stovintis/ausys.bmp");
-    sprites.push_back({0, -100, -100, tmpSurfc->w, tmpSurfc->h, SDL_CreateTextureFromSurface(rend, tmpSurfc)});
+    tmpSurfc = SDL_LoadBMP("./assets/images/stovintis/d_ausis.bmp");
+    sprites.push_back({360, -100, -100, tmpSurfc->w, tmpSurfc->h, SDL_CreateTextureFromSurface(rend, tmpSurfc)});
+    SDL_FreeSurface(tmpSurfc);
+
+    tmpSurfc = SDL_LoadBMP("./assets/images/stovintis/k_ausis.bmp");
+    sprites.push_back({360, -100, -100, tmpSurfc->w, tmpSurfc->h, SDL_CreateTextureFromSurface(rend, tmpSurfc)});
     SDL_FreeSurface(tmpSurfc);
 
     tmpSurfc = SDL_LoadBMP("./assets/images/stovintis/kojos.bmp");
-    sprites.push_back({0, -100, -100, tmpSurfc->w, tmpSurfc->h, SDL_CreateTextureFromSurface(rend, tmpSurfc)});
+    sprites.push_back({360, -100, -100, tmpSurfc->w, tmpSurfc->h, SDL_CreateTextureFromSurface(rend, tmpSurfc)});
     SDL_FreeSurface(tmpSurfc);
 
     tmpSurfc = SDL_LoadBMP("./assets/images/stovintis/kunelis.bmp");
-    sprites.push_back({0, -100, -100, tmpSurfc->w, tmpSurfc->h, SDL_CreateTextureFromSurface(rend, tmpSurfc)});
+    sprites.push_back({360, -100, -100, tmpSurfc->w, tmpSurfc->h, SDL_CreateTextureFromSurface(rend, tmpSurfc)});
     SDL_FreeSurface(tmpSurfc);
 
     tmpSurfc = SDL_LoadBMP("./assets/images/stovintis/neutralus_galva.bmp");
-    sprites.push_back({0, -100, -100, tmpSurfc->w, tmpSurfc->h, SDL_CreateTextureFromSurface(rend, tmpSurfc)});
+    sprites.push_back({360, -100, -100, tmpSurfc->w, tmpSurfc->h, SDL_CreateTextureFromSurface(rend, tmpSurfc)});
     SDL_FreeSurface(tmpSurfc);
 
     tmpSurfc = SDL_LoadBMP("./assets/images/stovintis/rankos.bmp");
-    sprites.push_back({0, -100, -100, tmpSurfc->w, tmpSurfc->h, SDL_CreateTextureFromSurface(rend, tmpSurfc)});
+    sprites.push_back({360, -100, -100, tmpSurfc->w, tmpSurfc->h, SDL_CreateTextureFromSurface(rend, tmpSurfc)});
     SDL_FreeSurface(tmpSurfc);
+    
     return;
 }
 
@@ -206,7 +221,7 @@ void placeRelative(){
  * @param textBox the SDL_Rect area where the text should be.
  * @param fontSize is the size of the font.
 */
-void renderText(std::string sentence, SDL_Rect &textBox, int fontSize){
+void renderText(std::string sentence, SDL_Rect textBox, int fontSize){
     std::vector<std::string> words_str;
     std::string individual_word{""};
     FT_Bitmap ftbitmap;
@@ -284,14 +299,14 @@ void button(std::string label, SDL_Rect textBox, SDL_Rect buttonBox, void (*onCl
  * In `label` variable, symbol `$` will be replaced with `value`.
  * Uses `renderText` function.
 */
-void slider(std::string label, int fontSize, SDL_Rect &sliderBox, int &value, int minValue, int maxValue){
+void slider(std::string label, int fontSize, SDL_Rect sliderBox, int &value, int minValue, int maxValue){
     int slider_mx, slider_my;
-    int notch_width = sliderBox.h, notch_height = sliderBox.h;
+    int notch_width = sliderBox.h/2, notch_height = sliderBox.h/2;
 
     SDL_RenderDrawLine(rend, sliderBox.x, sliderBox.y + sliderBox.h/2, sliderBox.x + sliderBox.w - 1, sliderBox.y + sliderBox.h/2);
 
     if(SDL_GetMouseState(&slider_mx, &slider_my) & SDL_BUTTON_LMASK && slider_mx >= sliderBox.x && slider_mx < sliderBox.x + sliderBox.w && slider_my >= sliderBox.y && slider_my < sliderBox.y + sliderBox.h){
-        value = (slider_mx-sliderBox.x-notch_width/2)*(maxValue-minValue+notch_width/2)/sliderBox.w;
+        value = int((double(slider_mx-sliderBox.x)/(sliderBox.w-notch_width))*(maxValue-minValue));
         if(value < minValue) value = minValue;
         if(value > maxValue) value = maxValue;
 
@@ -309,7 +324,7 @@ void slider(std::string label, int fontSize, SDL_Rect &sliderBox, int &value, in
     }
     renderText(new_label, slider_textbox, fontSize);
     
-    SDL_Rect slider_notch = {value*sliderBox.w/(maxValue-minValue+notch_width/2)+sliderBox.x, sliderBox.y+sliderBox.h/2-notch_height/2+1, notch_width, notch_height};
+    SDL_Rect slider_notch = {int(double(double(value)/double(maxValue-minValue))*(sliderBox.w-notch_width)+sliderBox.x), sliderBox.y+sliderBox.h/2-notch_height/2+1, notch_width, notch_height};
     SDL_RenderDrawRect(rend, &slider_notch);
     return;
 }
