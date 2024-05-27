@@ -20,9 +20,6 @@ SDL_Renderer* rend;
 SDL_Event evt;
 
 struct{
-    SDL_Rect tmp = {20,20, 200, 15};
-    SDL_Rect button = {20, 60, 40, 40};
-    SDL_Rect textArea = {20, 70, 40, font_Size};
 
 }boxes;
 
@@ -31,16 +28,26 @@ void loadFonts(int fontSize);
 void renderText(std::string sentence, SDL_Rect &textBox, int fontMaxHeight);
 void slider(std::string label, int fontSize, SDL_Rect &sliderBox, int &value, int minValue, int maxValue);
 //`*textBox` can be a NULL and the text will be put inside `buttonBox`.
-void button(std::string label, SDL_Rect *textBox, SDL_Rect&buttonBox, void (*onClick)());
+void button(std::string label, SDL_Rect textBox, SDL_Rect buttonBox, void (*onClick)());
 void loadSprites();
 
+void selected0();
+void selected1();
+void selected2();
+void selected3();
+void selected4();
 struct spr{
+    int rotation = 90;
+    int x, y;
     int w, h;
     SDL_Texture *txtr;
 };
 std::vector<spr> sprites;
-    int tmpValue = 20;
-    void test();
+int currentSelected = -1;
+
+bool pressedAButton = false;
+void placeRelative(int relativeTo);
+void render(int i);
 
 int main(int argc, char *argv[]){
     if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_TIMER)) std::cout << "Failed to initialize SDL!\n";
@@ -54,17 +61,26 @@ int main(int argc, char *argv[]){
 
     while(true)
     {
+        pressedAButton = false;
         SDL_PollEvent(&evt);
         SDL_SetRenderDrawColor(rend, 30,30,30,255);
         SDL_RenderClear(rend);
         SDL_SetRenderDrawColor(rend, 255,255,255,255);
 
-        // * Possibly a flag to put everything in a single line?
-        //renderText("Heyo daiud huwahd hawuihd ahwuidh iawdu hawidh uih", boxes.tmp, font_Size);
-        
-        slider("skaiciai: $", font_Size, boxes.tmp, tmpValue, 0 ,100);
+        //renderText("Heyo", boxes.tmp, font_Size);
+        //slider("skaiciai: $", font_Size, boxes.tmp, tmpValue, 0 ,100);
+        //button("++", &boxes.textArea, boxes.button, &test);
 
-        button("++", &boxes.textArea, boxes.button, &test);
+        button("     ausys", {40, 30, 40, font_Size}, {20, 20, 40, 40}, &selected0);
+        button("     kojos", {40, 80, 40, font_Size}, {20, 70, 40, 40}, &selected1);
+        button("     kunelis", {40, 130, 40, font_Size}, {20, 120, 40, 40}, &selected2);
+        button("     galva", {40, 180, 40, font_Size}, {20, 170, 40, 40}, &selected3);
+        button("     rankos", {40, 230, 40, font_Size}, {20, 220, 40, 40}, &selected4);
+
+        placeRelative(2);
+
+        for(int i = 0; i < 5; i++)
+            render(i);
 
         if(evt.type == SDL_QUIT)
             break;
@@ -73,32 +89,40 @@ int main(int argc, char *argv[]){
     return 0;
 }
 
-void test(){
-    tmpValue++;
-    return;
+void render(int i){
+    SDL_Rect tmpRect = {sprites[i].x, sprites[i].y, sprites[i].w, sprites[i].h};
+    SDL_RenderCopyEx(rend, sprites[i].txtr, NULL, &tmpRect, sprites[i].rotation, NULL, SDL_FLIP_NONE);
 }
+
+void selected0(){ if(currentSelected == 0) currentSelected = -1; else currentSelected = 0;}
+void selected1(){ if(currentSelected == 1) currentSelected = -1; else currentSelected = 1;}
+void selected2(){ if(currentSelected == 2) currentSelected = -1; else currentSelected = 2;}
+void selected3(){ if(currentSelected == 3) currentSelected = -1; else currentSelected = 3;}
+void selected4(){ if(currentSelected == 4) currentSelected = -1; else currentSelected = 4;}
 
 void loadSprites(){
     SDL_Surface *tmpSurfc;
 
+    //ausys kojos kunelis galva rankos
+    //  0     1      2      3     4
     tmpSurfc = SDL_LoadBMP("./assets/images/stovintis/ausys.bmp");
-    sprites.push_back({tmpSurfc->w, tmpSurfc->h, SDL_CreateTextureFromSurface(rend, tmpSurfc)});
+    sprites.push_back({90, -100, -100, tmpSurfc->w, tmpSurfc->h, SDL_CreateTextureFromSurface(rend, tmpSurfc)});
     SDL_FreeSurface(tmpSurfc);
 
     tmpSurfc = SDL_LoadBMP("./assets/images/stovintis/kojos.bmp");
-    sprites.push_back({tmpSurfc->w, tmpSurfc->h, SDL_CreateTextureFromSurface(rend, tmpSurfc)});
+    sprites.push_back({90, -100, -100, tmpSurfc->w, tmpSurfc->h, SDL_CreateTextureFromSurface(rend, tmpSurfc)});
     SDL_FreeSurface(tmpSurfc);
 
     tmpSurfc = SDL_LoadBMP("./assets/images/stovintis/kunelis.bmp");
-    sprites.push_back({tmpSurfc->w, tmpSurfc->h, SDL_CreateTextureFromSurface(rend, tmpSurfc)});
+    sprites.push_back({90, -100, -100, tmpSurfc->w, tmpSurfc->h, SDL_CreateTextureFromSurface(rend, tmpSurfc)});
     SDL_FreeSurface(tmpSurfc);
 
     tmpSurfc = SDL_LoadBMP("./assets/images/stovintis/neutralus_galva.bmp");
-    sprites.push_back({tmpSurfc->w, tmpSurfc->h, SDL_CreateTextureFromSurface(rend, tmpSurfc)});
+    sprites.push_back({90, -100, -100, tmpSurfc->w, tmpSurfc->h, SDL_CreateTextureFromSurface(rend, tmpSurfc)});
     SDL_FreeSurface(tmpSurfc);
 
     tmpSurfc = SDL_LoadBMP("./assets/images/stovintis/rankos.bmp");
-    sprites.push_back({tmpSurfc->w, tmpSurfc->h, SDL_CreateTextureFromSurface(rend, tmpSurfc)});
+    sprites.push_back({90, -100, -100, tmpSurfc->w, tmpSurfc->h, SDL_CreateTextureFromSurface(rend, tmpSurfc)});
     SDL_FreeSurface(tmpSurfc);
     return;
 }
@@ -122,6 +146,18 @@ void loadFonts(int fontSize){
 
     for(int i = 0; i < 256; i++)
         colors[i].r = colors[i].g = colors[i].b = colors[i].a= i;
+    return;
+}
+
+void placeRelative(int relativeTo){
+    if(currentSelected == -1) return;
+
+    int place_mx, place_my;
+    if(SDL_GetMouseState(&place_mx, &place_my) & SDL_BUTTON_LMASK){
+        sprites[currentSelected].x = place_mx;
+        sprites[currentSelected].y = place_my;
+    }
+
     return;
 }
 
@@ -189,16 +225,17 @@ void renderText(std::string sentence, SDL_Rect &textBox, int fontSize){
     return;
 }
 
-void button(std::string label, SDL_Rect *textBox, SDL_Rect&buttonBox, void (*onClick)()){
+void button(std::string label, SDL_Rect textBox, SDL_Rect buttonBox, void (*onClick)()){
     int button_mx, button_my;
     SDL_GetMouseState(&button_mx, &button_my);
 
     SDL_RenderDrawRect(rend, &buttonBox);
-    renderText(label, *textBox, font_Size);
+    renderText(label, textBox, font_Size);
 
-    if(button_mx >= buttonBox.x && button_mx < buttonBox.x + buttonBox.w && button_my >= buttonBox.y && button_my < buttonBox.y + buttonBox.h && evt.type == SDL_MOUSEBUTTONDOWN && evt.button.button == SDL_BUTTON_LEFT)
+    if(button_mx >= buttonBox.x && button_mx < buttonBox.x + buttonBox.w && button_my >= buttonBox.y && button_my < buttonBox.y + buttonBox.h && evt.type == SDL_MOUSEBUTTONDOWN && evt.button.button == SDL_BUTTON_LEFT){
         onClick();
-    
+        pressedAButton = true;
+    }    
     return;
 }
 
@@ -218,6 +255,8 @@ void slider(std::string label, int fontSize, SDL_Rect &sliderBox, int &value, in
         value = (slider_mx-sliderBox.x-notch_width/2)*(maxValue-minValue+notch_width/2)/sliderBox.w;
         if(value < minValue) value = minValue;
         if(value > maxValue) value = maxValue;
+
+        pressedAButton = true;
     }
 
     SDL_Rect slider_textbox = {sliderBox.x, sliderBox.y-fontSize-2, sliderBox.w, fontSize};
