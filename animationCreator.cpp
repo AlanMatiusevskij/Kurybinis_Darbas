@@ -28,6 +28,14 @@ std::string intToString(int numb);
 void loadFonts(int fontSize);
 void renderText(std::string sentence, SDL_Rect &textBox, int fontMaxHeight);
 void slider(std::string label, int fontSize, SDL_Rect &sliderBox, int &value, int minValue, int maxValue);
+void loadSprites();
+
+    struct spr{
+        //SDL_Surface *img;
+        int w, h;
+        SDL_Texture *txtr;
+    };
+std::vector<spr> sprites;
 
 int main(int argc, char *argv[]){
     if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_TIMER)) std::cout << "Failed to initialize SDL!\n";
@@ -48,12 +56,19 @@ int main(int argc, char *argv[]){
         //renderText("Heyo daiud huwahd hawuihd ahwuidh iawdu hawidh uih", boxes.tmp, font_Size);
         
         //slider("skaiciai: $ * 0.1", font_Size, boxes.tmp, tmpValue, 0 ,100);
+        loadSprites();
 
         if(evt.type == SDL_QUIT)
             break;
         SDL_RenderPresent(rend);
     }
     return 0;
+}
+
+void loadSprites(){
+
+
+    return;
 }
 
 /**

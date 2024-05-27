@@ -151,7 +151,6 @@ bool petto::waitForBaseAngle(){
 }
 
 void petto::animate_STOVINTIS(){
-    //INSTANT CHANGE
     //Stovincio pozicija, rotations, idle animation.
 
     return;
