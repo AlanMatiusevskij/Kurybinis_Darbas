@@ -5,6 +5,7 @@
 #include<ft2build.h>
 #include FT_FREETYPE_H
 
+#include<fstream>
 #include<iostream>
 #include<vector>
 
@@ -45,15 +46,25 @@ struct spr{
 std::vector<spr> sprites;
 int currentSelected = -1;
 
+struct save_info{
+    int rotation;
+    int relative_x, relative_y;
+    int dividend; //?
+};
+std::vector<std::vector<save_info>> info;
+
 bool pressedAButton = false;
-void placeRelative(int relativeTo);
+void placeRelative();
 void render(int i);
+void save();
+void clearInfo();
+void capture();
 
 int main(int argc, char *argv[]){
     if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_TIMER)) std::cout << "Failed to initialize SDL!\n";
     if(FT_Init_FreeType(&ft)) std::cout << "Failed to initialize FreeType library!\n";
     loadFonts(font_Size);
-
+    info.resize(5);
     SDL_Window* wind = SDL_CreateWindow("animator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, 0);
     rend = SDL_CreateRenderer(wind, -1, 0);
 
@@ -77,7 +88,11 @@ int main(int argc, char *argv[]){
         button("galva", {21, 180, 40, font_Size}, {20, 170, 40, 40}, &selected3);
         button("rankos", {21, 230, 40, font_Size}, {20, 220, 40, 40}, &selected4);
 
-        placeRelative(2);
+        button("capture", {WIDTH-45, 20, 40, font_Size}, {WIDTH-50, 10, 40, 40}, &capture);
+        button("clear", {WIDTH-45, 60, 40, font_Size}, {WIDTH-50, 50, 40, 40}, &clearInfo);
+        button("save", {WIDTH-45, 100, 40, font_Size}, {WIDTH-50, 90, 40, 40}, &save);
+
+        placeRelative();
 
         for(int i = 0; i < 5; i++)
             render(i);
@@ -88,6 +103,32 @@ int main(int argc, char *argv[]){
     }
     return 0;
 }
+
+    //ausys kojos kunelis galva rankos
+    //  0     1      2      3     4
+
+void clearInfo(){
+    info.clear();
+    info.resize(5);
+}
+
+void capture(){
+    for(int i = 0; i < info.size(); i++){
+        info[i].push_back({sprites[i].rotation, sprites[2].x-sprites[i].x, sprites[2].y - sprites[i].y, 10});
+    }
+}
+
+void save(){
+    std::ofstream output{"./assets/animations/stovintis.txt"};
+    for(int i = 0; i < info.size(); i++){
+        output << info[i].size() << " " <<  i <<" ";
+
+        for(int x = 0; x < info[i].size(); x++)
+            output << info[i][x].rotation << " " << info[i][x].relative_x << " " << info[i][x].relative_y << " " << info[i][x].dividend << "   ";
+
+        output << "\n";
+    }
+};
 
 void render(int i){
     SDL_Rect tmpRect = {sprites[i].x, sprites[i].y, sprites[i].w/10, sprites[i].h/10};
@@ -103,8 +144,6 @@ void selected4(){ if(currentSelected == 4) currentSelected = -1; else currentSel
 void loadSprites(){
     SDL_Surface *tmpSurfc;
 
-    //ausys kojos kunelis galva rankos
-    //  0     1      2      3     4
     tmpSurfc = SDL_LoadBMP("./assets/images/stovintis/ausys.bmp");
     sprites.push_back({0, -100, -100, tmpSurfc->w, tmpSurfc->h, SDL_CreateTextureFromSurface(rend, tmpSurfc)});
     SDL_FreeSurface(tmpSurfc);
@@ -149,8 +188,8 @@ void loadFonts(int fontSize){
     return;
 }
 
-void placeRelative(int relativeTo){
-    if(currentSelected == -1) return;
+void placeRelative(){
+    if(currentSelected == -1 || pressedAButton) return;
 
     int place_mx, place_my;
     if(SDL_GetMouseState(&place_mx, &place_my) & SDL_BUTTON_LMASK){

@@ -50,13 +50,14 @@ namespace petto{
     int PREV_anim = ANIMATIONS.STOVINTIS;
     int CURRENT_anim = ANIMATIONS.STOVINTIS;
 
-    struct pasusisukimo_info{
-        double pgr_kampas;
-        double min_kampas;
-        double max_kampas;
+    struct frame{
+        int angle;
+        int relativeX, relativeY;
+        int dividend;
     };
-    std::vector<double> kampai;
-    std::vector<std::vector<pasusisukimo_info>> kampuInfo;
+    std::vector<int> kampai;
+    //[animacijos kategorija][kunoDalis][Frames]
+    std::vector<std::vector<std::vector<frame>>> frames;
     //k_koja, d_koja, kunelis, k_ranka, d_ranka, galva, k_ausis, d_ausis.
     //   0      1        2         3        4       5      6        7
 
@@ -78,7 +79,7 @@ namespace petto{
     int stringToInt(std::string in);
     std::string getNthWord(std::string in, int n);
     double stringToDouble(std::string in);
-    void getAngles(std::vector<pasusisukimo_info> &vektor, std::string path, bool saveToCurrent);
+    void petto::getAngles(std::vector<std::vector<frame>> &frameVek, std::string path);
 }
 
 void petto::loadBMPs(std::string path, spr &sprite){
@@ -143,7 +144,7 @@ void petto::animate(){
 
     return;
 }
-
+int frm = 0;
 bool petto::waitForBaseAngle(){
 
     //true when the base angle reached
@@ -152,7 +153,7 @@ bool petto::waitForBaseAngle(){
 
 void petto::animate_STOVINTIS(){
     //Stovincio pozicija, rotations, idle animation.
-
+    
     return;
 }
 
@@ -181,17 +182,17 @@ void petto::createCharacter(){
     loadBMPs("stovintis/kunelis", sprites[CATEGORY.STOVINTIS][STOVINTIS.KUNELIS]);
     loadBMPs("stovintis/rankos", sprites[CATEGORY.STOVINTIS][STOVINTIS.RANKOS]);
 
-    kampuInfo.resize(CATEGORY.NUMB);
+    frames.resize(CATEGORY.NUMB);
     kampai.resize(7);
 
-    getAngles(kampuInfo[CATEGORY.STOVINTIS], "stovintis", true);
-    getAngles(kampuInfo[CATEGORY.PASUKTAS], "pasuktas", false);
+    getAngles(frames[CATEGORY.STOVINTIS], "stovintis");
+    getAngles(frames[CATEGORY.PASUKTAS], "pasuktas");
 
     return;
 }
 
-void petto::getAngles(std::vector<pasusisukimo_info> &vektor, std::string path, bool saveToCurrent){
-    vektor.resize(7);
+void petto::getAngles(std::vector<std::vector<frame>> &frameVek, std::string path){
+    frameVek.resize(7);
 
     if(path[0] != '.')
         path = "./assets/animations/" + path;
@@ -208,11 +209,9 @@ void petto::getAngles(std::vector<pasusisukimo_info> &vektor, std::string path, 
         std::string line;
         std::getline(animdata, line);
 
-        //index base min max
-        vektor[stringToInt(getNthWord(line, 1))] = {stringToDouble(getNthWord(line, 2)), stringToDouble(getNthWord(line, 3)), stringToDouble(getNthWord(line, 4))};
-        
-        if(saveToCurrent)
-            kampai[stringToInt(getNthWord(line, 1))] = stringToDouble(getNthWord(line, 2));
+        for(int i = 0 ; i < stringToInt(getNthWord(line, 1))*4; i+=4){
+            frameVek[stringToInt(getNthWord(line, 2))].push_back({stringToInt(getNthWord(line, 3 + i)), stringToInt(getNthWord(line, 3 + i + 1)), stringToInt(getNthWord(line, 3 + i + 2)), stringToInt(getNthWord(line, 3 + i + 3))});
+        }        
     }
     animdata.close();
     return;
