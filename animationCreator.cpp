@@ -13,7 +13,7 @@ int HEIGHT = 600;
 
 FT_Library ft;
 FT_FaceRec_* face;
-int font_Size = 16;
+int font_Size = 12;
 SDL_Color colors[256];
 
 SDL_Renderer* rend;
@@ -71,11 +71,11 @@ int main(int argc, char *argv[]){
         //slider("skaiciai: $", font_Size, boxes.tmp, tmpValue, 0 ,100);
         //button("++", &boxes.textArea, boxes.button, &test);
 
-        button("     ausys", {40, 30, 40, font_Size}, {20, 20, 40, 40}, &selected0);
-        button("     kojos", {40, 80, 40, font_Size}, {20, 70, 40, 40}, &selected1);
-        button("     kunelis", {40, 130, 40, font_Size}, {20, 120, 40, 40}, &selected2);
-        button("     galva", {40, 180, 40, font_Size}, {20, 170, 40, 40}, &selected3);
-        button("     rankos", {40, 230, 40, font_Size}, {20, 220, 40, 40}, &selected4);
+        button("ausys", {21, 30, 40, font_Size}, {20, 20, 40, 40}, &selected0);
+        button("kojos", {21, 80, 40, font_Size}, {20, 70, 40, 40}, &selected1);
+        button("kunelis", {21, 130, 40, font_Size}, {20, 120, 40, 40}, &selected2);
+        button("galva", {21, 180, 40, font_Size}, {20, 170, 40, 40}, &selected3);
+        button("rankos", {21, 230, 40, font_Size}, {20, 220, 40, 40}, &selected4);
 
         placeRelative(2);
 
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]){
 }
 
 void render(int i){
-    SDL_Rect tmpRect = {sprites[i].x, sprites[i].y, sprites[i].w, sprites[i].h};
+    SDL_Rect tmpRect = {sprites[i].x, sprites[i].y, sprites[i].w/10, sprites[i].h/10};
     SDL_RenderCopyEx(rend, sprites[i].txtr, NULL, &tmpRect, sprites[i].rotation, NULL, SDL_FLIP_NONE);
 }
 
@@ -106,23 +106,23 @@ void loadSprites(){
     //ausys kojos kunelis galva rankos
     //  0     1      2      3     4
     tmpSurfc = SDL_LoadBMP("./assets/images/stovintis/ausys.bmp");
-    sprites.push_back({90, -100, -100, tmpSurfc->w, tmpSurfc->h, SDL_CreateTextureFromSurface(rend, tmpSurfc)});
+    sprites.push_back({0, -100, -100, tmpSurfc->w, tmpSurfc->h, SDL_CreateTextureFromSurface(rend, tmpSurfc)});
     SDL_FreeSurface(tmpSurfc);
 
     tmpSurfc = SDL_LoadBMP("./assets/images/stovintis/kojos.bmp");
-    sprites.push_back({90, -100, -100, tmpSurfc->w, tmpSurfc->h, SDL_CreateTextureFromSurface(rend, tmpSurfc)});
+    sprites.push_back({0, -100, -100, tmpSurfc->w, tmpSurfc->h, SDL_CreateTextureFromSurface(rend, tmpSurfc)});
     SDL_FreeSurface(tmpSurfc);
 
     tmpSurfc = SDL_LoadBMP("./assets/images/stovintis/kunelis.bmp");
-    sprites.push_back({90, -100, -100, tmpSurfc->w, tmpSurfc->h, SDL_CreateTextureFromSurface(rend, tmpSurfc)});
+    sprites.push_back({0, -100, -100, tmpSurfc->w, tmpSurfc->h, SDL_CreateTextureFromSurface(rend, tmpSurfc)});
     SDL_FreeSurface(tmpSurfc);
 
     tmpSurfc = SDL_LoadBMP("./assets/images/stovintis/neutralus_galva.bmp");
-    sprites.push_back({90, -100, -100, tmpSurfc->w, tmpSurfc->h, SDL_CreateTextureFromSurface(rend, tmpSurfc)});
+    sprites.push_back({0, -100, -100, tmpSurfc->w, tmpSurfc->h, SDL_CreateTextureFromSurface(rend, tmpSurfc)});
     SDL_FreeSurface(tmpSurfc);
 
     tmpSurfc = SDL_LoadBMP("./assets/images/stovintis/rankos.bmp");
-    sprites.push_back({90, -100, -100, tmpSurfc->w, tmpSurfc->h, SDL_CreateTextureFromSurface(rend, tmpSurfc)});
+    sprites.push_back({0, -100, -100, tmpSurfc->w, tmpSurfc->h, SDL_CreateTextureFromSurface(rend, tmpSurfc)});
     SDL_FreeSurface(tmpSurfc);
     return;
 }
