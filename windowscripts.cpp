@@ -196,7 +196,8 @@ void displayText(std::string sentence, SDL_Rect &textBox, int fontMaxHeight){
             int belowBaseline = face->glyph->metrics.height - face->glyph->metrics.horiBearingY;
             SDL_Rect dest = {textBox.x + currentWidth,int( textBox.y + fontMaxHeight - glyph->h + belowBaseline/50), glyph->w, glyph->h};
             texture = SDL_CreateTextureFromSurface(rend, glyph);
-            SDL_RenderCopy(rend, texture, NULL, &dest);    
+            SDL_Rect renderArea = {0, 0, std::min(textBox.w-currentWidth, glyph->w), std::min(textBox.h-currentHeight, glyph->h)};
+            SDL_RenderCopy(rend, texture, &renderArea, &textBox);
             
             //Clean up. Change positions of the next letter.
             currentWidth+= glyph->w;
