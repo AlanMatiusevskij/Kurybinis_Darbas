@@ -87,7 +87,6 @@ void altFunc(){
     if(GetAsyncKeyState(VK_LBUTTON) == 0 && altLMBPress) altLMBPress = false;
     if(GetAsyncKeyState(VK_LBUTTON) != 0 && !altLMBPress){
         altLMBPress = true;
-        petto::target_point = {mx, -1};
     }
 
     if(GetAsyncKeyState(VK_RBUTTON) != 0 && !altRMBPress) textRect = {mx, my, 0, 0};
