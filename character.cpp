@@ -26,26 +26,45 @@ struct JOINT_STRUCT{
     double y;
 };
 enum jointNames{
-    K_PEDA = 0,
-    K_KELIS = 1,
-    D_PEDA = 2,
-    D_KELIS = 3,
-    DUBUO = 4,
-    JOINT_COUNT = 5
+    K_AUSIS = 0,
+    D_AUSIS = 1,
+    GALVA = 2,
+    K_BLAUZDA = 3,
+    D_BLAUZDA = 4,
+    K_SLAUNIS = 5,
+    D_SLAUNIS = 6,
+    KUNELIS = 7,
+    K_RANKA = 8,
+    D_RANKA = 9,
+    
+    JOINT_COUNT = 10
 };
-enum spriteIndexes{
-  //category_*kategorijosPavadinimas*, category*KategorijosPavadinimas*_SpriteNumb, *kategorija*_*nuotraukosPavadinimas*. (nuotrauka=sprite)
-    category_test = 0, categoryTest_SpriteNumb = 2, test_koja = 0, test_kunelis = 1,
+int CURRENTCATEGORY, CURRENTSPRITENUMB;
 
-    //Kiek iš viso kategorijų.
-    totalSpriteCategoryNumb = 1
+//Sprites
+int totalSpriteCategoryNumb = 2;
+enum class category_test{
+    TEST = 0,
+    SPRITE_NUMB = 2,
+    
+    koja = 0, kunelis = 1
 };
+int pasuktas_order[8] = {3, 5,4,6, 0, 2, 7, 1};
+enum class category_pasuktas{
+    PASUKTAS = 1,
+    SPRITE_NUMB = 8,
+    
+    ausis_gale = 0, ausis_priekyje = 1, galva = 2, koja_gale = 3, koja_priekyje = 4, kunelis = 5, ranka_priekyje = 6, veidas = 7
+};
+
 //Išsaugoma 'SDL_Rect' pozicija ir 'SDL_Texture' sprite informacija kiekvienai nuotraukai. 
 struct spriteInfo{
     SDL_Surface* img_data;
     SDL_Texture* img;
+    //LENGTH YRA KIEK KARTU MAZINTI**
+    int length;
+    int joint_index;
 };
-int feet_index[2] = {K_PEDA, D_PEDA};
 int destinationME = 5;
 double g = 0.05;
 /*sprites[kategorijos indeksas][kategorijoje esancios nuotraukos indeksas]*/
@@ -94,12 +113,18 @@ void actuallyCreateCharacterBones(int indeksas, double baseAngle, double minAngl
 */
 void createCharacterBones(){
     joints.resize(JOINT_COUNT);
-    joints[DUBUO] = {pi_2, 0, 0, 0, 0, 0, (double)charStartingPos.x, (double)charStartingPos.y};
+    //Kurie neturi judėti visiškai
+    joints[KUNELIS] = {pi_2, 0, 0, 0, 0, 0, (double)charStartingPos.x, (double)charStartingPos.y};
+    joints[GALVA] = {pi_2, 0, 0, 0, 0, 0, (double)charStartingPos.x, (double)charStartingPos.y - kuno_ilg};
 
-    actuallyCreateCharacterBones(K_KELIS, rad(88), rad(78), rad(180-78), thigh, dideja);
-    actuallyCreateCharacterBones(D_KELIS, rad(92), rad(78), rad(180-78), thigh, mazeja);
-    actuallyCreateCharacterBones(K_PEDA, rad(88), rad(90), rad(180-60), calf, dideja);
-    actuallyCreateCharacterBones(D_PEDA, rad(92), rad(90), rad(180-60), calf, mazeja);
+    actuallyCreateCharacterBones(K_AUSIS, rad(88), rad(88), rad(180-88), ausies_ilg, dideja);
+    actuallyCreateCharacterBones(D_AUSIS, rad(92), rad(88), rad(180-88), ausies_ilg, mazeja); 
+    actuallyCreateCharacterBones(K_SLAUNIS, rad(88), rad(83), rad(180-83), slaunies_ilg, dideja);
+    actuallyCreateCharacterBones(D_SLAUNIS, rad(92), rad(83), rad(180-83), slaunies_ilg, mazeja);
+    actuallyCreateCharacterBones(K_BLAUZDA, rad(88), rad(90), rad(180-60), blauzdos_ilg, dideja);
+    actuallyCreateCharacterBones(D_BLAUZDA, rad(92), rad(90), rad(180-60), blauzdos_ilg, mazeja);
+    actuallyCreateCharacterBones(K_RANKA, rad(90), rad(83), rad(180-83), rankos_ilg, dideja);
+    actuallyCreateCharacterBones(D_RANKA, rad(90), rad(83), rad(180-83), rankos_ilg, mazeja);
 
     updateBones();
     return;
@@ -116,10 +141,15 @@ void connectbones(jointNames connect, jointNames to){
     return;
 }
 void updateBones(){
-    connectbones(K_KELIS, DUBUO);
-    connectbones(D_KELIS, DUBUO);
-    connectbones(K_PEDA, K_KELIS);
-    connectbones(D_PEDA, D_KELIS);
+    connectbones(GALVA, KUNELIS);
+    connectbones(K_AUSIS, GALVA);
+    connectbones(D_AUSIS, GALVA);
+    connectbones(K_RANKA, KUNELIS);
+    connectbones(D_RANKA, KUNELIS);
+    connectbones(K_SLAUNIS, KUNELIS);
+    connectbones(D_SLAUNIS, KUNELIS);
+    connectbones(K_BLAUZDA, K_SLAUNIS);
+    connectbones(D_BLAUZDA, D_SLAUNIS);
     return;
 }
 
@@ -135,17 +165,19 @@ void physics(){
 
 /**
  * Nustato, kada įvyksta 'atsitrenkimas' ('collision').
- * Ką pakeisti: teamhoode.
  * @return "KOJOS", kai veikėjas paliečia platformą. "-", kai veikėjas nieko nepaliečia.
 */
 std::string collisions(){
-    for(int i : feet_index){
-        if(platformPoints.size() >= int(joints[DUBUO].y + 1) * WIDTH - joints[DUBUO].x + ground*WIDTH || joints[i].y + 2 >= HEIGHT-1){
-            if(platformPoints[int(joints[DUBUO].y + 1) *WIDTH -joints[DUBUO].x + ground*WIDTH ] == 1 || joints[i].y + 2 >= HEIGHT-1){
-                return "KOJOS";
-            }
-        }
+    if(joints[KUNELIS].y + ground + 2 >= HEIGHT - 1){
+        joints[KUNELIS].y = HEIGHT-ground;
+        return "KOJOS";
     }
+
+    //patikrinti keleta y tasku depenbding on how fast the thing falls
+    if(platformPoints.size() > round(joints[KUNELIS].y + 1) * WIDTH - joints[KUNELIS].x + ground*WIDTH)
+        if(platformPoints[round(joints[KUNELIS].y + 1) * WIDTH - joints[KUNELIS].x + ground*WIDTH] == 1){
+            return "KOJOS";
+        }
     return "-"; //no collision
 }
 
@@ -159,11 +191,11 @@ double rad(double degrees){
 
 //ALLOWED TO CHANGE STATE ISNT WORKING
 bool allowedToChangeState = true;
-bool begin[5] = {true,true,true,true,true};
+bool begin[7] = {true,true,true,true,true, true, true};
 void resetPos(){
     int count= 0;
     //i was desperate, its 4am when im writing this
-    int indx[4] = {D_KELIS, K_KELIS, D_PEDA, K_PEDA};
+    int indx[6] = {D_SLAUNIS, K_SLAUNIS, D_BLAUZDA, K_BLAUZDA, D_RANKA, K_RANKA};
     for(int i : indx){
         if(std::abs(joints[i].defaultAngle-joints[i].ANGLE) > rad(1)){
             if(joints[i].ANGLE > joints[i].defaultAngle) joints[i].ANGLE -= rad(1);
@@ -174,32 +206,34 @@ void resetPos(){
             count++;
         }
     }
-    for(int i = 0; i < 5; i++) begin[i] = true;
-    joints[K_KELIS].rotDir = dideja;
-    joints[D_KELIS].rotDir = mazeja;
-    joints[K_PEDA].rotDir = dideja;
-    joints[D_PEDA].rotDir = mazeja;
-    if(count == 4) allowedToChangeState = true;
+    for(int i = 0; i < 7; i++) begin[i] = true;
+    joints[K_SLAUNIS].rotDir = dideja;
+    joints[D_SLAUNIS].rotDir = mazeja;
+    joints[K_BLAUZDA].rotDir = dideja;
+    joints[D_BLAUZDA].rotDir = mazeja;
+    joints[K_RANKA].rotDir = dideja;
+    joints[D_RANKA].rotDir = mazeja;
+    if(count == 6) allowedToChangeState = true;
     return;
 }
-
 void animate(){
     //Moving
     if(velX!=0){
         allowedToChangeState = false;
         double speed = velX;
         int direction = velX/(std::abs(velX));
-        int indx[2] = {D_KELIS, K_KELIS};
+        int indx[4] = {D_SLAUNIS, K_SLAUNIS, D_RANKA, K_RANKA};
         for(int i : indx){
+            if(i == D_RANKA || i== K_RANKA) speed = velX/2;
+            else speed = velX/1.5;
             if(joints[i].ANGLE > joints[i].maxAngle ) joints[i].rotDir = -1;
             if(joints[i].ANGLE <= joints[i].minAngle) joints[i].rotDir = 1;
             joints[i].ANGLE += speed*joints[i].rotDir/45 * direction;
         }
-        indx[0] = D_PEDA;
-        indx[1] = K_PEDA;
-
+        int ind[2] = {D_BLAUZDA, K_BLAUZDA};
+        speed = velX/1.5;
         //somewhere multiply by direction;
-        for(int i : indx){
+        for(int i : ind){
             if(joints[i+1].ANGLE < pi_2) begin[i] = true;
             if(joints[i].ANGLE > joints[i].maxAngle){
                 begin[i] = false;
@@ -217,44 +251,75 @@ void animate(){
     return;
 }
 
+void prepASprite(const char* path, int category, int obj, SDL_Renderer* renderer, int jointindex, int mazinti){
+    SDL_Surface* tmpsurfc;
+    tmpsurfc = SDL_LoadBMP(path);
+
+    sprites[category][obj].img_data = tmpsurfc;
+    sprites[category][obj].img = SDL_CreateTextureFromSurface(renderer, tmpsurfc);
+
+    sprites[category][obj].joint_index = jointindex;
+    sprites[category][obj].length = mazinti;
+
+    SDL_FreeSurface(tmpsurfc);
+    return;
+}
+
 void prepareSprites(){
     SDL_Surface* tmpSurfc{};
     spritePositions.resize(JOINT_COUNT);
     sprites.resize(totalSpriteCategoryNumb);
-    sprites[category_test].resize(categoryTest_SpriteNumb);
+    sprites[(int)category_pasuktas::PASUKTAS].resize((int)category_pasuktas::SPRITE_NUMB);
 
-    tmpSurfc = SDL_LoadBMP("./assets/images/test/kojele.bmp");
-    sprites[category_test][test_koja].img_data = tmpSurfc;
-    sprites[category_test][test_koja].img = SDL_CreateTextureFromSurface(rend, tmpSurfc);
+    prepASprite("./assets/images/pasuktas/ausis_gale.bmp", (int)category_pasuktas::PASUKTAS, (int)category_pasuktas::ausis_gale, rend, K_AUSIS, (int)sumazinti::ausis);
+    prepASprite("./assets/images/pasuktas/ausis_priekyje.bmp", (int)category_pasuktas::PASUKTAS, (int)category_pasuktas::ausis_priekyje, rend, D_AUSIS, (int)sumazinti::ausis);
+    prepASprite("./assets/images/pasuktas/galva.bmp", (int)category_pasuktas::PASUKTAS, (int)category_pasuktas::galva, rend, -1, (int)sumazinti::galva);
+    prepASprite("./assets/images/pasuktas/koja_gale.bmp", (int)category_pasuktas::PASUKTAS, (int)category_pasuktas::koja_gale, rend, K_SLAUNIS, (int)sumazinti::kojas);
+    prepASprite("./assets/images/pasuktas/koja_priekyje.bmp", (int)category_pasuktas::PASUKTAS, (int)category_pasuktas::koja_priekyje, rend, D_SLAUNIS, (int)sumazinti::kojas);
+    prepASprite("./assets/images/pasuktas/kunelis.bmp", (int)category_pasuktas::PASUKTAS, (int)category_pasuktas::kunelis, rend, KUNELIS, (int)sumazinti::kuneli);
+    prepASprite("./assets/images/pasuktas/ranka_priekyje.bmp", (int)category_pasuktas::PASUKTAS, (int)category_pasuktas::ranka_priekyje, rend, K_RANKA, (int)sumazinti::rankas);
+    prepASprite("./assets/images/pasuktas/veidas.bmp", (int)category_pasuktas::PASUKTAS, (int)category_pasuktas::veidas, rend, -1, (int)sumazinti::veida);
 
-    SDL_FreeSurface(tmpSurfc); //free memory, kadangi vis tapatį variable naudojam, neturėtų būti memory leak, bet gali nutikti somehow vistiek 
-    tmpSurfc = SDL_LoadBMP("./assets/images/test/kunelis.bmp");
-    sprites[category_test][test_kunelis].img_data = tmpSurfc;
-    sprites[category_test][test_kunelis].img = SDL_CreateTextureFromSurface(rend, tmpSurfc);
     return;
 }
 
 /**
  * Ekrane parodo paruoštą nuotrauką.
  * @param sprite_info tai nuotraukos informacijos struct'as. Jį duoti funkcijai iš vektoriaus: sprites[kategorijos indeksas][nuotraukos indeksas]
- * @param dydis tai kiek kartų nuotrauka turi būti sumažinta. Naudoti enum reikšmes.
- * @param joint_index tai joint'o, prie kurio turi būti 'prilipintas' sprite, pavadinimas.
  * @param to_flip nusako, ar nuotrauka turi būti apversta. 0 - ne, 1 - horizontaliai apversti.
 */
-void renderSprite(spriteInfo& sprite_info, sprite_x_kartu_sumazintas_dydis dydis, jointNames joint_index, int to_flip){
-    spritePositions[joint_index] = {(int)joints[joint_index].x - sprite_info.img_data->w/(2*dydis), (int)joints[joint_index].y, sprite_info.img_data->w/dydis, sprite_info.img_data->h/dydis};
-    SDL_RenderCopyEx(rend, sprite_info.img, NULL, &spritePositions[joint_index], joints[joint_index].ANGLE*180/pi - 90, new SDL_Point{sprite_info.img_data->w/(2*dydis), 0}, (SDL_RendererFlip)to_flip);
+void renderSprite(spriteInfo& sprite_info, int to_flip, int i){
+    int x = sprite_info.joint_index;
+    if(sprite_info.joint_index == -1){
+        if(i == (int)category_pasuktas::galva){
+            x = GALVA;
+            spritePositions[GALVA] = {(int)joints[KUNELIS].x - sprite_info.img_data->w/(2*sprite_info.length), (int)joints[KUNELIS].y - galvos_ilg, sprite_info.img_data->w/sprite_info.length, sprite_info.img_data->h/sprite_info.length};
+        }
+        if(i == (int)category_pasuktas::veidas){//20 -20
+            x = GALVA;
+            //spritePositions[GALVA] = {(int)joints[KUNELIS].x - sprite_info.img_data->w/(2*sprite_info.length), (int)joints[KUNELIS].y - galvos_ilg, sprite_info.img_data->w/sprite_info.length, sprite_info.img_data->h/sprite_info.length};
+        }
+    }
+    else
+        spritePositions[sprite_info.joint_index] = {(int)joints[sprite_info.joint_index].x - sprite_info.img_data->w/(2*sprite_info.length), (int)joints[sprite_info.joint_index].y, sprite_info.img_data->w/sprite_info.length, sprite_info.img_data->h/sprite_info.length};
+    
+    SDL_RenderCopyEx(rend, sprite_info.img, NULL, &spritePositions[x], joints[x].ANGLE*180/pi - 90, new SDL_Point{sprite_info.img_data->w/(2*sprite_info.length), 0}, (SDL_RendererFlip)to_flip);
     return;
 }
 
 void applySprites(){
     int flip;
+    if(velX != 0 || velX == 0){
+        CURRENTCATEGORY = (int)category_pasuktas::PASUKTAS;
+        CURRENTSPRITENUMB = (int)category_pasuktas::SPRITE_NUMB;
+    }
+    //else currentactegory = stovintis;
+
     if(velX >= 0) flip = 0; //dont flip
     if(velX < 0) flip = 1;  //do flip
 
-    renderSprite(sprites[category_test][test_koja], kojuDydis, K_KELIS, flip);
-    renderSprite(sprites[category_test][test_kunelis], kunelioDydis, DUBUO, flip);
-    renderSprite(sprites[category_test][test_koja], kojuDydis, D_KELIS, flip);
+    for(int i : pasuktas_order)
+        renderSprite(sprites[CURRENTCATEGORY][i], flip, i);
 
     return;
 }
@@ -265,13 +330,13 @@ void applySprites(){
 */
 void pathfinding(){
     while(togoPoints.size() > 0){
-        if(std::abs(togoPoints[0].x-joints[DUBUO].x) < destinationME)
+        if(std::abs(togoPoints[0].x-joints[KUNELIS].x) < destinationME)
             togoPoints.erase(togoPoints.begin());
         else break;
     }
 
     if(togoPoints.size()>0){
-        if(togoPoints[0].x > joints[DUBUO].x) velX = 1;
+        if(togoPoints[0].x > joints[KUNELIS].x) velX = 1;
         else velX = -1;
     }
     else velX = 0;
@@ -282,20 +347,20 @@ void pathfinding(){
  * Viena funkcija, kuri rodys visus kaulus ir taškus ir kelią, kurį kiekvienas objektas turės eiti.
  * Su laiku papildyti.
 */
-void debuglines(){
-    SDL_SetRenderDrawColor(rend, 0,255,0,255);
-    if(togoPoints.size()>0) SDL_RenderDrawLine(rend, joints[DUBUO].x, joints[DUBUO].y, togoPoints[0].x, joints[DUBUO].y);
+// void debuglines(){
+//     SDL_SetRenderDrawColor(rend, 0,255,0,255);
+//     if(togoPoints.size()>0) SDL_RenderDrawLine(rend, joints[KUNELIS].x, joints[DUBUO].y, togoPoints[0].x, joints[DUBUO].y);
 
-    SDL_SetRenderDrawColor(rend, 255,255,255,255);
-    for(JOINT_STRUCT joint : joints)
-        SDL_RenderDrawPoint(rend, joint.x, joint.y);
-    SDL_RenderDrawLine(rend, joints[K_PEDA].x, joints[K_PEDA].y, joints[K_KELIS].x, joints[K_KELIS].y);
-    SDL_RenderDrawLine(rend, joints[D_PEDA].x, joints[D_PEDA].y, joints[D_KELIS].x, joints[D_KELIS].y);
+//     SDL_SetRenderDrawColor(rend, 255,255,255,255);
+//     for(JOINT_STRUCT joint : joints)
+//         SDL_RenderDrawPoint(rend, joint.x, joint.y);
+//     SDL_RenderDrawLine(rend, joints[K_PEDA].x, joints[K_PEDA].y, joints[K_KELIS].x, joints[K_KELIS].y);
+//     SDL_RenderDrawLine(rend, joints[D_PEDA].x, joints[D_PEDA].y, joints[D_KELIS].x, joints[D_KELIS].y);
 
-    SDL_RenderDrawLine(rend, joints[DUBUO].x, joints[DUBUO].y, joints[K_KELIS].x, joints[K_KELIS].y);
-    SDL_RenderDrawLine(rend, joints[DUBUO].x, joints[DUBUO].y, joints[D_KELIS].x, joints[D_KELIS].y);
-    return;
-}
+//     SDL_RenderDrawLine(rend, joints[DUBUO].x, joints[DUBUO].y, joints[K_KELIS].x, joints[K_KELIS].y);
+//     SDL_RenderDrawLine(rend, joints[DUBUO].x, joints[DUBUO].y, joints[D_KELIS].x, joints[D_KELIS].y);
+//     return;
+// }
 
 /**
  * Tikrina, ką naudotojas daro su veikėju.
@@ -390,13 +455,15 @@ void processCharacter(){
 
     physics();
     pathfinding();
+
     animate();
 
-    joints[DUBUO].x += velX;
-    joints[DUBUO].y += velY;
+    joints[KUNELIS].x += velX;
+    joints[KUNELIS].y += velY;
     updateBones();
 
     applySprites();
+
     //debuglines();
     return;
 }

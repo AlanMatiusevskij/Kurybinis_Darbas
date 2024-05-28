@@ -18,5 +18,8 @@
 *.dist/
 *.onefile-build/
 
+# pycache?
+__pycache__/
+
 # Vscode settings
 .vscode/

@@ -9,6 +9,8 @@
 #include<ft2build.h>
 #include FT_FREETYPE_H
 
+#include<PyCLink/pyclink.h>
+
 #include<SDL2/SDL.h>
 #include<SDL2/SDL_syswm.h>
 
@@ -55,17 +57,29 @@ pixel_struct charStartingPos = {400,100};
 std::string textinput{};
 FT_Library ft;
 FT_FaceRec_* face;
-int fontSize = 17;
+int fontSize = 24;
 SDL_Color colors[256];
 
 enum kaulu_ilgiai{
-    calf = 45,
-    thigh = 65
+    blauzdos_ilg = 55,
+    slaunies_ilg = 75,
+    ausies_ilg = -50,
+    galvos_ilg = 40,
+    rankos_ilg = 40,
+    kuno_ilg = 60,
 };
-int ground = calf + thigh; //ŠITAS TURI BŪTI ŠIEK TIEK ILGESNIS UŽ ATSTUMĄ NUO DUBENS IR KOJŲ GALŲ NUOTRAUKOS.
-enum sprite_x_kartu_sumazintas_dydis{
-    kojuDydis = 3,
-    kunelioDydis = 4
+int ground = blauzdos_ilg + slaunies_ilg + 5; //ŠITAS GALI TURĖTI BŪTI ŠIEK TIEK ILGESNIS UŽ ATSTUMĄ NUO DUBENS IR KOJŲ GALŲ NUOTRAUKOS.
+/**
+ * Kiek kartu sumazinti originalu sprite.
+*/
+enum class sumazinti{
+    kojas = 6,
+    kuneli = 8,
+    galva = 8,
+    ausis = 10,
+    rankas = 7,
+    veida = 8
+
 };
 enum{
     dideja = 1,
@@ -87,7 +101,9 @@ void altFunc();
 void loadFonts();
 void displayText(std::string sentence, SDL_Rect &textBox, int fontMaxHeight);
 double rad(double degrees);
+void chatGPTinquiry(std::vector<std::string> words);
 void prepareSprites();
+
 //some useful stuff:
     // std::cout << ("\033[31mThis is red font.\033[0m") << "\n";
     // std::cout << ("\033[32mThis is green font.\033[0m")<< "\n";

@@ -19,12 +19,15 @@ BITMAPINFO bitmap;
 bool altLMBPress = false;
 bool altRMBPress = false;
 bool textInputReady = false;
+bool allowedToType = true;
+
+std::vector<std::string> words_str;
+char* answer = (char*)"-";
 
 /**
  * Gets various information about the screen bitmap and saves it to an array ("bitpointer");
 */
 void getScreenPixelInfo(){
-    //need to make sure we dont create duplicates
     DeleteDC(hdcMemory);
     ReleaseDC(hWnd, hdc); 
     hdc = GetDC(HWND_DESKTOP);
@@ -42,7 +45,9 @@ void getScreenPixelInfo(){
     HBITMAP hbitmap = CreateDIBSection(hdcMemory, &bitmap, DIB_RGB_COLORS, (void**)(&bitPointer), NULL, purposeIsToRemoveWarning);
     SelectObject(hdcMemory, hbitmap);
     BitBlt(hdcMemory, 0, 0, WIDTH, HEIGHT, hdc, 0, 0, SRCCOPY);
+
     DeleteObject(hbitmap);
+    
     //without 2 of 'delete' and 1 of 'release' memory increases +~30mb/s until program crashes
     return;
 }
@@ -82,7 +87,7 @@ void altFunc(){
     if(GetAsyncKeyState(VK_LBUTTON) == 0 && altLMBPress) altLMBPress = false;
     if(GetAsyncKeyState(VK_LBUTTON) != 0 && !altLMBPress){
         altLMBPress = true;
-        togoPoints.push_back({mx, -1});
+        petto::target_point = {mx, -1};
     }
 
     if(GetAsyncKeyState(VK_RBUTTON) != 0 && !altRMBPress) textRect = {mx, my, 0, 0};
@@ -105,18 +110,18 @@ void altFunc(){
 
 /**
  * A function that is called when a text input box is active and reads keyboard input.
- * todo: get window focus. for some reason doesnt react when rpessing the upp[er part of the body??]
+ * todo: get window focus. for some reason doesnt react when pressing the upper part of the body??
 */
 void textInputFunctionallity(){
     SDL_SetRenderDrawColor(rend, 227, 161, 75, 255);
     SDL_RenderDrawRect(rend, &textRect);
 
     //Gauti tekstą/užklausą.
-    if(evt.type == SDL_TEXTINPUT){
+    if(evt.type == SDL_TEXTINPUT && allowedToType){
         textinput.insert(typeIndex, std::string(evt.text.text));
         typeIndex++;
     }
-    if(evt.type == SDL_KEYDOWN){
+    if(evt.type == SDL_KEYDOWN && allowedToType){
         switch(evt.key.keysym.sym){
             case SDLK_BACKSPACE:
                 if(textinput.size() > 0){
@@ -133,6 +138,9 @@ void textInputFunctionallity(){
             case SDLK_RIGHT:
                 typeIndex++;
                 break;
+            case SDLK_RETURN:
+                chatGPTinquiry(words_str);
+                break;
         }
         textinput.shrink_to_fit();
         if(typeIndex > textinput.size()) typeIndex = textinput.size()-1;
@@ -144,7 +152,7 @@ void textInputFunctionallity(){
 }
 
 /**
- * 
+ * Loads the main .ttf type font.
 */
 void loadFonts(){
     FT_Open_Args args;
@@ -161,65 +169,96 @@ void loadFonts(){
 }
 
 /**
- * 
+ * Display text.
+ * @param sentence the text to display.
+ * @param textBox the SDL_Rect area where the text should be.
+ * @param fontMaxHeight is the maximum height of the font.
 */
 void displayText(std::string sentence, SDL_Rect &textBox, int fontMaxHeight){
-    std::vector<std::string> words;
+    words_str.clear();
     std::string individual_word{""};
     FT_Bitmap ftbitmap;
-    int currentWidth = 2;
-    int currentHeight = fontMaxHeight + 2;
 
     for(int i = 0; i < sentence.size(); i++){
         if(sentence[i] == ' '){
-            words.push_back(individual_word);
+            words_str.push_back(individual_word);
             individual_word = "";
         }
         else individual_word += sentence[i];
     }
-    words.push_back(individual_word);
+    words_str.push_back(individual_word);
 
-    for(std::string phrase : words){
+    //Display all characters.
+    int totalWidth = 1;
+    int y = 1;
+    //Word info
+    int letterCount = 0; //since the start of the word.
+
+    for(std::string phrase : words_str){
         for(char letter : phrase){
-            //Load a specific letter and get its bitmap
+            //Get bitmap
             FT_Load_Char(face, letter, FT_LOAD_RENDER);
             ftbitmap = face->glyph->bitmap;
 
-            SDL_Texture*texture;
-            SDL_Surface *glyph = SDL_CreateRGBSurfaceFrom(ftbitmap.buffer, ftbitmap.width, ftbitmap.rows, 8, ftbitmap.pitch, 0, 0, 0, 0xFF);
-                
-            //Apply pallete (basically give an array of colors to use).
+            //Create a surface and apply palette's colros
+            SDL_Surface* glyph = SDL_CreateRGBSurfaceFrom(ftbitmap.buffer, ftbitmap.width, ftbitmap.rows, 8, ftbitmap.pitch, 0, 0, 0, 0xFF);
             SDL_SetPaletteColors(glyph->format->palette, colors, 0, 256);
-            SDL_SetSurfaceBlendMode(glyph, SDL_BlendMode::SDL_BLENDMODE_BLEND);
+            SDL_SetSurfaceBlendMode(glyph, SDL_BlendMode::SDL_BLENDMODE_ADD);            
 
-            //Create a place, where the letter will be displayed and display it.
-            int belowBaseline = face->glyph->metrics.height - face->glyph->metrics.horiBearingY;
-            SDL_Rect dest = {textBox.x + currentWidth,int( textBox.y + fontMaxHeight - glyph->h + belowBaseline/50), glyph->w, glyph->h};
-            texture = SDL_CreateTextureFromSurface(rend, glyph);
-            SDL_Rect renderArea = {0, 0, std::min(textBox.w-currentWidth, glyph->w), std::min(textBox.h-currentHeight, glyph->h)};
-            SDL_RenderCopy(rend, texture, &renderArea, &textBox);
+            //Create the 'letterbox'.
+            int belowBaseLine = (face->glyph->metrics.height - face->glyph->metrics.horiBearingY)/55;    
+            SDL_Rect pos = {textBox.x + totalWidth, int(textBox.y + y + fontMaxHeight - glyph->h + belowBaseLine), glyph->w, glyph->h};
             
-            //Clean up. Change positions of the next letter.
-            currentWidth+= glyph->w;
+            //Check if the letter goes to a new line.
+            totalWidth+=glyph->w;
+            if(totalWidth>=textBox.w){
+                y += 24;
+                totalWidth = 1 + glyph->w;
+                pos.x = textBox.x + 1;
+                pos.y = int(textBox.y + y + fontMaxHeight - glyph->h + belowBaseLine);
+            }
+
+            //Display the letter.
+            SDL_Texture* texture = SDL_CreateTextureFromSurface(rend, glyph);
+            SDL_RenderCopy(rend, texture, NULL, &pos);
+            
+            //Clean up.
             SDL_FreeSurface(glyph);
             SDL_DestroyTexture(texture);
         }
-        currentWidth+=4;
+        totalWidth+=6;
+        letterCount = 0;
     }
     return;
 }
 
-//use this only for debug(or curiosity), but it wont work with scanning thread at the same time!
-// void displayFloors(){
-//     SDL_SetRenderDrawColor(rend, COLOR_TO_IGNORE.r, COLOR_TO_IGNORE.g, COLOR_TO_IGNORE.b, COLOR_TO_IGNORE.a);
-//     SDL_RenderClear(rend);
-//     SDL_RenderPresent(rend);
-//     platformPoints = GETSCREENGROUND(platformScanColorME);
-//     SDL_SetRenderDrawColor(rend, 255,255,0,255);
-//     for(int i = 0; i < platformPoints.size(); i++){
-//         SDL_RenderDrawPoint(rend, platformPoints[i].x, platformPoints[i].y);
-//     }
-// }
+/**
+ * Starts the python application to send the contents of the text field to chatgpt (python applicaiton)
+*/
+void chatGPTinquiry(std::vector<std::string> words){
+    std::string allText = "";
+    for(int i = 0; i < words.size(); i++)
+        allText += words[i];
+
+    allowedToType = false;
+    pyclink::communicate("./chatbot.exe", allText.c_str(), &answer, 5000, true);
+
+    return;
+}
+
+/**
+ * A function which waits for chatgpt's response.
+*/
+void updateResponse(){
+    if(answer != "-"){
+        allowedToType = true;
+        textinput.clear();
+        for(int i = 0; i < strlen(answer); i++)
+            textinput += answer[i];
+        answer = (char*)"-";
+    }
+    return;
+}
 
 /*stupidly slow
     COLORREF key;

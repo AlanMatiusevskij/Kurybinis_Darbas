@@ -10,6 +10,7 @@
 
 //Defining functions
 void INITIALIZE();
+void getErrors();
 
 //Defining variables
 
@@ -26,6 +27,10 @@ int main(int argc, char *argv[]){
         processCharacter();
         if(textInputReady) textInputFunctionallity();
 
+        //Laukti chatgbt atsakymo
+        if(allowedToType == false)
+            updateResponse();
+
         //Inputs
         SDL_PollEvent(&evt);
         if(GetAsyncKeyState(VK_LMENU)!=0) altFunc();
@@ -33,7 +38,7 @@ int main(int argc, char *argv[]){
             break;
             
         //Pabaiga
-        SDL_RenderPresent(rend);
+        SDL_RenderPresent(rend);    
         SDL_Delay((1/float(UPS))*1000);
     }
     FT_Done_FreeType(ft);
@@ -48,11 +53,12 @@ void INITIALIZE(){
 
     wind = SDL_CreateWindow(WIND_TITLE.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_ALWAYS_ON_TOP);
     rend = SDL_CreateRenderer(wind, -1, SDL_RENDERER_ACCELERATED);
-    SDL_SetRenderDrawBlendMode(rend, SDL_BlendMode::SDL_BLENDMODE_NONE);
 
     //Load fonts
     SDL_StartTextInput();
     loadFonts();
+
+    pyclink::changeMapName("fileMapObjectPetto1");
 
     //Get window handle;
     SDL_SysWMinfo wmInfo;
@@ -65,5 +71,6 @@ void INITIALIZE(){
 
     createCharacterBones();
     prepareSprites();
+
     return;
 }
