@@ -220,7 +220,8 @@ void displayText(std::string sentence, SDL_Rect &textBox, int fontMaxHeight){
 
             //Display the letter.
             SDL_Texture* texture = SDL_CreateTextureFromSurface(rend, glyph);
-            SDL_RenderCopy(rend, texture, NULL, &pos);
+            SDL_Rect renderArea = {0, 0, std::min(textBox.w-totalWidth, glyph->w), std::min(textBox.h-y, glyph->h)};
+            SDL_RenderCopy(rend, texture, &renderArea, &textBox);
             
             //Clean up.
             SDL_FreeSurface(glyph);
