@@ -1,5 +1,5 @@
 //i686-w64-mingw32-g++ -I src/include -L src/lib -o animator animationCreator.cpp  -lmingw32 -lSDL2main -lSDL2 -lfreetype
-
+//this is a mess. redo it all 
 #include<SDL2/SDL.h>
 
 #include<ft2build.h>
@@ -22,6 +22,7 @@ SDL_Event evt;
 
 
 int spriteNumb = 6;
+int sumazinti = 10;
 
 std::string intToString(int numb);
 void loadFonts(int fontSize);
@@ -101,6 +102,7 @@ int main(int argc, char *argv[]){
         slider("kampas kunelis: $", font_Size , {100, 140, 200,20}, sprites[3].rotation, 0, 720);
         slider("kampas galva: $", font_Size , {100, 180, 200,20}, sprites[4].rotation, 0, 720);
         slider("kampas rankos: $", font_Size , {100, 220, 200,20}, sprites[5].rotation, 0, 720);
+         slider("sumazinti: $", font_Size , {100, 280, 200,20}, sumazinti, 2, 15);
 
         placeRelative();
 
@@ -140,7 +142,7 @@ void save(){
 };
 
 void render(int i){
-    SDL_Rect tmpRect = {sprites[i].x, sprites[i].y, sprites[i].w/10, sprites[i].h/10};
+    SDL_Rect tmpRect = {sprites[i].x, sprites[i].y, sprites[i].w/sumazinti, sprites[i].h/sumazinti};
     SDL_RenderCopyEx(rend, sprites[i].txtr, NULL, &tmpRect, sprites[i].rotation, NULL, SDL_FLIP_NONE);
 }
 
