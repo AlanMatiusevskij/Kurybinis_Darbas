@@ -21,16 +21,18 @@ SDL_Window *wind;
 SDL_Renderer *rend;
 SDL_Event evt;
 
-std::string CD = "./";
+FT_FaceRec_ *face;
+std::string CD = "./assets/images";
 
 std::string intToString(int numb);
-void loadFont(int fontSize, FT_FaceRec_ *face);
+void loadFont(int fontSize);
 void loadSprites();
-void browseDirectory(std::string &cd);
+void browseDirectory(std::string &cd, SDL_Rect box, int fontSize);
 
 void renderText(std::string sentence, SDL_Rect textBox, int fontSize, bool newLines);
 void slider(std::string label, int fontSize, SDL_Rect sliderBox, int &value, int minValue, int maxValue);
 void button(std::string label, SDL_Rect buttonbox, void(*onClick)());
+void scrollBar(GUItypes type, SDL_Rect box, std::vector<std::string> entries, int fontSize, void(*onButtonClick)(const std::string&));
 
 struct spr{
     int rotation;
@@ -64,17 +66,22 @@ int main(int argc, char *argv[]){
     FT_Init_FreeType(&ft);
 
     wind = SDL_CreateWindow("animator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, 0);
+    rend = SDL_CreateRenderer(wind, -1, 0);
 
     for(int i = 0; i < 256; i++)
         colors[i].r = colors[i].g = colors[i].b = colors[i].a= i;
-    loadSprites();
-
+         
     while(true){
         SDL_PollEvent(&evt);
-        
+        SDL_SetRenderDrawColor(rend, 30,30,30,255);
+        SDL_RenderClear(rend);
+        SDL_SetRenderDrawColor(rend, 255,255,255,255);
+
+        browseDirectory(CD, {10, 10, 300, 300}, 18);
 
         if(evt.type == SDL_QUIT)
             break;
+        SDL_RenderPresent(rend);
     }
 
     FT_Done_FreeType(ft);
@@ -82,18 +89,41 @@ int main(int argc, char *argv[]){
     return 0;
 }
 
-void browseDirectory(std::string &cd){
-    //Get current files in the directory
+void browseDirectory(std::string &cd, SDL_Rect box, int fontSize){
+    //Get current files in the directory TODO: error handling
     std::vector<std::string> files;
     for(const auto &entry : std::filesystem::directory_iterator(cd)){
         files.push_back(entry.path().filename().generic_string());
     }
 
+    //Draw boxes
+    SDL_RenderDrawRect(rend, &box);
+    SDL_RenderDrawLine(rend, box.x, box.y + fontSize + 2, box.x + box.w - 1, box.y + fontSize + 2);
+
+    //Print current directory
+    renderText(cd, {box.x + 1, box.y + 1, box.w - 1, fontSize}, fontSize, false);
 
 }
 
-void scrollBar(GUItypes type, SDL_Rect box, std::vector<std::string> entries, void(*onButtonClick)()){
-    
+bool onRect(SDL_Rect rect){
+    int tmpMx, tmpMy;
+    SDL_GetMouseState(&tmpMx, &tmpMy);
+    if(rect.x <= tmpMx && rect.x + rect.w > tmpMx && rect.y <= tmpMy && rect.y + rect.h > tmpMy)
+        return true;
+    return false;
+}
+
+void scrollBar(GUItypes type, SDL_Rect box, std::vector<std::string> entries, int fontSize, std::){
+    int scrollbar_mx, scrollbar_my;
+
+    if(type == GUItypes::BUTTON){
+        for(int i = 0; i < entries.size(); i++){
+            SDL_Rect butBox = {box.x, box.y + 1 + fontSize*i, box.w, fontSize};
+            if(onRect(butBox) && evt.type == SDL_MOUSEBUTTONDOWN && evt.button.button == SDL_BUTTON_LEFT)
+                onButtonClick(entries[i]);
+        }
+    }
+
 }
 
 void loadSprites(){
@@ -102,25 +132,25 @@ void loadSprites(){
         if(entry.path().extension() == ".bmp")
             std::cout << entry.path().filename() << "\n";
     }
+
 }
 
-void loadFont(int fontSize, FT_FaceRec_ *face){
+void loadFont(int fontSize){
     FT_Open_Args args;
     args.flags = FT_OPEN_PATHNAME;
     char fontpath[]= "./assets/fonts/OpenSans-Regular.ttf";
     args.pathname = fontpath;
     if(FT_Open_Face(ft, &args, 0, &face)) std::cout << "Failed to load fonts!\n";
+    face->glyph->format = FT_GLYPH_FORMAT_BITMAP;
     FT_Set_Pixel_Sizes(face, fontSize, fontSize);
-    face->glyph->format = ft_glyph_format_bitmap;
 }
 
 void renderText(std::string sentence, SDL_Rect textBox, int fontSize, bool newLines){
     std::vector<std::string> words;
     std::string ind_word{""};
     FT_Bitmap ftbitmap;
-    FT_FaceRec_* face;
 
-    loadFont(fontSize, face);
+    loadFont(fontSize);
 
     //Save each word and whitespace in a vector
     for(int i = 0; i < sentence.size(); i++){
@@ -140,6 +170,7 @@ void renderText(std::string sentence, SDL_Rect textBox, int fontSize, bool newLi
     for(std::string word : words){
         for(char symb : word){
             FT_Load_Char(face, symb, FT_LOAD_RENDER);
+
             ftbitmap = face->glyph->bitmap;
 
             //Create a surface and apply palette's colros
@@ -149,21 +180,21 @@ void renderText(std::string sentence, SDL_Rect textBox, int fontSize, bool newLi
 
             //Letterbox
             int belowBaseLine = (face->glyph->metrics.height - face->glyph->metrics.horiBearingY)/55;
-            SDL_Rect pos = {textBox.x + totalWidth, int(textBox.y + linePos - fontSize + glyph->h + belowBaseLine), glyph->w, glyph->h};
+            SDL_Rect pos = {textBox.x + totalWidth, int(textBox.y + linePos + (fontSize-fontSize/5) - glyph->h + belowBaseLine), glyph->w, glyph->h};
 
             totalWidth+=glyph->w;
             if(newLines && totalWidth >= textBox.w){
                 linePos+=fontSize;
                 totalWidth = 1 + glyph->w;
                 pos.x = textBox.w + 1;
-                pos.y = int(textBox.y + linePos + fontSize - glyph->h + belowBaseLine);
+                pos.y = int(textBox.y + linePos + (fontSize-fontSize/5) - glyph->h + belowBaseLine);
             }
 
             //Display the symbol
             SDL_Texture *txtr = SDL_CreateTextureFromSurface(rend, glyph);
             //Don't render outside the bounds!
             SDL_Rect renderArea = {0, 0, std::min(textBox.w-totalWidth, glyph->w), std::min(textBox.h-linePos, glyph->h)};
-            SDL_RenderCopy(rend, txtr, &renderArea, &textBox);
+            SDL_RenderCopy(rend, txtr, &renderArea, &pos);
 
             //clean up
             SDL_FreeSurface(glyph);
@@ -171,4 +202,5 @@ void renderText(std::string sentence, SDL_Rect textBox, int fontSize, bool newLi
         }
         totalWidth+=fontSize/4;
     }
+    FT_Done_Face(face);
 }
