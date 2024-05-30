@@ -1,5 +1,4 @@
 //i686-w64-mingw32-g++ -I src/include -L src/lib -o animator animationCreator.cpp  -lmingw32 -lSDL2main -lSDL2 -lfreetype
-//this is a mess. redo it all 
 #include<SDL2/SDL.h>
 
 #include<ft2build.h>
@@ -24,15 +23,21 @@ SDL_Event evt;
 FT_FaceRec_ *face;
 std::string CD = "./assets/images";
 
+enum GUItypes{
+    TEXT = 0,
+    BUTTON = 1
+};
+
 std::string intToString(int numb);
 void loadFont(int fontSize);
 void loadSprites();
+void selectDirectory(std::string label);
 void browseDirectory(std::string &cd, SDL_Rect box, int fontSize);
 
 void renderText(std::string sentence, SDL_Rect textBox, int fontSize, bool newLines);
 void slider(std::string label, int fontSize, SDL_Rect sliderBox, int &value, int minValue, int maxValue);
 void button(std::string label, SDL_Rect buttonbox, void(*onClick)());
-void scrollBar(GUItypes type, SDL_Rect box, std::vector<std::string> entries, int fontSize, void(*onButtonClick)(const std::string&));
+void scrollBar(GUItypes type, SDL_Rect box, std::vector<std::string> entries, int fontSize, void (*onClick)(std::string));
 
 struct spr{
     int rotation;
@@ -49,15 +54,12 @@ struct save_info{
     int dividend;
 };
 
-enum GUItypes{
-    TEXT = 0,
-    BUTTON = 1
-};
-
-
 void place();
 void render();
+
+void selectDirectory();
 void saveToFile();
+
 void clearFrames();
 void saveFrame();
 
@@ -93,16 +95,19 @@ void browseDirectory(std::string &cd, SDL_Rect box, int fontSize){
     //Get current files in the directory TODO: error handling
     std::vector<std::string> files;
     for(const auto &entry : std::filesystem::directory_iterator(cd)){
-        files.push_back(entry.path().filename().generic_string());
+        files.push_back(entry.path().generic_string());
     }
 
     //Draw boxes
     SDL_RenderDrawRect(rend, &box);
     SDL_RenderDrawLine(rend, box.x, box.y + fontSize + 2, box.x + box.w - 1, box.y + fontSize + 2);
 
+    //TODO: add a "go back" button on the right corner
+
     //Print current directory
     renderText(cd, {box.x + 1, box.y + 1, box.w - 1, fontSize}, fontSize, false);
 
+    scrollBar(GUItypes::BUTTON, {box.x, box.y + 1 + fontSize, box.x + box.w, box.y + box.h - fontSize -1}, files, fontSize, &selectDirectory);
 }
 
 bool onRect(SDL_Rect rect){
@@ -113,17 +118,25 @@ bool onRect(SDL_Rect rect){
     return false;
 }
 
-void scrollBar(GUItypes type, SDL_Rect box, std::vector<std::string> entries, int fontSize, std::){
-    int scrollbar_mx, scrollbar_my;
+void selectDirectory(std::string label){
+    CD = label;
+    return;
+}
 
+void scrollBar(GUItypes type, SDL_Rect box, std::vector<std::string> entries, int fontSize, void (*onClick)(std::string)){
+    int scrollbar_mx, scrollbar_my;
+    
+    //TODO move text
+    //Show directories and files
     if(type == GUItypes::BUTTON){
         for(int i = 0; i < entries.size(); i++){
-            SDL_Rect butBox = {box.x, box.y + 1 + fontSize*i, box.w, fontSize};
+            SDL_Rect butBox = {box.x, box.y + 1 + fontSize*i + fontSize, box.w, fontSize};
             if(onRect(butBox) && evt.type == SDL_MOUSEBUTTONDOWN && evt.button.button == SDL_BUTTON_LEFT)
-                onButtonClick(entries[i]);
+                onClick(entries[i]);
+            renderText(entries[i], butBox, fontSize, false);
         }
     }
-
+    return;
 }
 
 void loadSprites(){
