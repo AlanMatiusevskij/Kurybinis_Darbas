@@ -28,7 +28,6 @@ char* answer = (char*)"-";
  * Gets various information about the screen bitmap and saves it to an array ("bitpointer");
 */
 void getScreenPixelInfo(){
-    //need to make sure we dont create duplicates
     DeleteDC(hdcMemory);
     ReleaseDC(hWnd, hdc); 
     hdc = GetDC(HWND_DESKTOP);
@@ -46,7 +45,9 @@ void getScreenPixelInfo(){
     HBITMAP hbitmap = CreateDIBSection(hdcMemory, &bitmap, DIB_RGB_COLORS, (void**)(&bitPointer), NULL, purposeIsToRemoveWarning);
     SelectObject(hdcMemory, hbitmap);
     BitBlt(hdcMemory, 0, 0, WIDTH, HEIGHT, hdc, 0, 0, SRCCOPY);
+
     DeleteObject(hbitmap);
+    
     //without 2 of 'delete' and 1 of 'release' memory increases +~30mb/s until program crashes
     return;
 }
@@ -203,7 +204,7 @@ void displayText(std::string sentence, SDL_Rect &textBox, int fontMaxHeight){
             //Create a surface and apply palette's colros
             SDL_Surface* glyph = SDL_CreateRGBSurfaceFrom(ftbitmap.buffer, ftbitmap.width, ftbitmap.rows, 8, ftbitmap.pitch, 0, 0, 0, 0xFF);
             SDL_SetPaletteColors(glyph->format->palette, colors, 0, 256);
-            SDL_SetSurfaceBlendMode(glyph, SDL_BlendMode::SDL_BLENDMODE_BLEND);            
+            SDL_SetSurfaceBlendMode(glyph, SDL_BlendMode::SDL_BLENDMODE_ADD);            
 
             //Create the 'letterbox'.
             int belowBaseLine = (face->glyph->metrics.height - face->glyph->metrics.horiBearingY)/55;    
@@ -220,7 +221,8 @@ void displayText(std::string sentence, SDL_Rect &textBox, int fontMaxHeight){
 
             //Display the letter.
             SDL_Texture* texture = SDL_CreateTextureFromSurface(rend, glyph);
-            SDL_RenderCopy(rend, texture, NULL, &pos);
+            SDL_Rect renderArea = {0, 0, std::min(textBox.w-totalWidth, glyph->w), std::min(textBox.h-y, glyph->h)};
+            SDL_RenderCopy(rend, texture, &renderArea, &textBox);
             
             //Clean up.
             SDL_FreeSurface(glyph);
