@@ -68,7 +68,7 @@ enum kaulu_ilgiai{
     rankos_ilg = 40,
     kuno_ilg = 60,
 };
-int ground = blauzdos_ilg + slaunies_ilg + 5; //ŠITAS GALI TURĖTI BŪTI ŠIEK TIEK ILGESNIS UŽ ATSTUMĄ NUO DUBENS IR KOJŲ GALŲ NUOTRAUKOS.
+int ground = blauzdos_ilg + slaunies_ilg + 10; //ŠITAS GALI TURĖTI BŪTI ŠIEK TIEK ILGESNIS UŽ ATSTUMĄ NUO DUBENS IR KOJŲ GALŲ NUOTRAUKOS.
 /**
  * Kiek kartu sumazinti originalu sprite.
 */

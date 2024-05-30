@@ -86,6 +86,7 @@ void altFunc(){
     if(GetAsyncKeyState(VK_LBUTTON) == 0 && altLMBPress) altLMBPress = false;
     if(GetAsyncKeyState(VK_LBUTTON) != 0 && !altLMBPress){
         altLMBPress = true;
+        togoPoints.clear();
         togoPoints.push_back({mx, -1});
     }
 
