@@ -33,11 +33,14 @@ void loadFont(int fontSize);
 void loadSprites();
 void selectDirectory(std::string label);
 void browseDirectory(std::string &cd, SDL_Rect box, int fontSize);
+void cdBack();
 
 void renderText(std::string sentence, SDL_Rect textBox, int fontSize, bool newLines);
 void slider(std::string label, int fontSize, SDL_Rect sliderBox, int &value, int minValue, int maxValue);
-void button(std::string label, SDL_Rect buttonbox, void(*onClick)());
+void button(std::string label, SDL_Rect buttonbox, int fontSize, void(*onClick)());
 void scrollBar(GUItypes type, SDL_Rect box, std::vector<std::string> entries, int fontSize, void (*onClick)(std::string));
+
+bool onRect(SDL_Rect rect);
 
 struct spr{
     int rotation;
@@ -69,6 +72,7 @@ int main(int argc, char *argv[]){
 
     wind = SDL_CreateWindow("animator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, 0);
     rend = SDL_CreateRenderer(wind, -1, 0);
+    SDL_SetRenderDrawBlendMode(rend, SDL_BlendMode::SDL_BLENDMODE_BLEND);
 
     for(int i = 0; i < 256; i++)
         colors[i].r = colors[i].g = colors[i].b = colors[i].a= i;
@@ -91,6 +95,12 @@ int main(int argc, char *argv[]){
     return 0;
 }
 
+void button(std::string label, SDL_Rect buttonbox, int fontSize, void(*onClick)()){
+    if(onRect(buttonbox) && evt.type == SDL_MOUSEBUTTONDOWN && evt.button.button == SDL_BUTTON_LEFT)
+        onClick();
+    renderText(label, buttonbox, fontSize, false);
+}
+
 void browseDirectory(std::string &cd, SDL_Rect box, int fontSize){
     //Get current files in the directory TODO: error handling
     std::vector<std::string> files;
@@ -102,12 +112,21 @@ void browseDirectory(std::string &cd, SDL_Rect box, int fontSize){
     SDL_RenderDrawRect(rend, &box);
     SDL_RenderDrawLine(rend, box.x, box.y + fontSize + 2, box.x + box.w - 1, box.y + fontSize + 2);
 
-    //TODO: add a "go back" button on the right corner
+    button("..", {box.x + box.w - fontSize, box.y, fontSize, fontSize}, fontSize, &cdBack);
 
     //Print current directory
     renderText(cd, {box.x + 1, box.y + 1, box.w - 1, fontSize}, fontSize, false);
 
-    scrollBar(GUItypes::BUTTON, {box.x, box.y + 1 + fontSize, box.x + box.w, box.y + box.h - fontSize -1}, files, fontSize, &selectDirectory);
+    scrollBar(GUItypes::BUTTON, {box.x, box.y + fontSize + 2, box.w, box.h -fontSize-2}, files, fontSize, &selectDirectory);
+}
+
+void cdBack(){
+    if(CD.size() > 2 && CD[CD.size()-1] == '/') CD.pop_back();
+    for(int i = CD.size()-1; i >= 1; i--){
+        if(CD[i] != '/') CD.pop_back();
+        else
+            return;
+    }
 }
 
 bool onRect(SDL_Rect rect){
@@ -118,22 +137,88 @@ bool onRect(SDL_Rect rect){
     return false;
 }
 
+std::string reverseString(std::string in){
+    std::string _return = "";
+    for(int i = in.size() -1; i >= 0; i--)
+        _return += in[i];
+    return _return;
+}
+
 void selectDirectory(std::string label){
-    CD = label;
+    //Check if its a folder.
+    std::string extension = "";
+    bool a_folder = true;
+
+    for(int i = label.size() - 1; i > 0; i--){
+        extension+=label[i];
+        if(label[i] == '/') break;
+        if(label[i] == '.'){
+            extension = reverseString(extension);
+            a_folder = false;
+            break;
+        }
+    }    
+    if(a_folder) CD = label;
+    //else if extension == ".bmp"// load an image
     return;
 }
 
 void scrollBar(GUItypes type, SDL_Rect box, std::vector<std::string> entries, int fontSize, void (*onClick)(std::string)){
-    int scrollbar_mx, scrollbar_my;
-    
-    //TODO move text
+    int y;
+    static int delta;
+    static bool scrollBarPressed = false;
+
+    //shift is scroll bar position;
+    static int shift = 0; 
+
+    //Check if new entries
+    static std::vector<std::string> old{};
+    if(old != entries){
+        old = entries;
+        shift = 0;
+    }
+
+    //Display the bar slot
+    SDL_Rect sliderSlot = {box.x + box.w - 8, box.y, 8, box.h};
+    SDL_RenderDrawRect(rend, &sliderSlot);
+
+    //Calculate the heigth of the bar and display it;
+    if((1 + fontSize*entries.size()) > box.h){
+        double height = (double(box.h*box.h)/((1+fontSize)*(entries.size()+2)));
+
+        SDL_Rect sliderBox = {box.x + box.w - 8, box.y + shift, 8, (int)height};
+        SDL_SetRenderDrawColor(rend, 0,0,0,140);
+        SDL_RenderFillRect(rend, &sliderBox);
+
+    //Scroll Functionallity
+        if(evt.type == SDL_MOUSEBUTTONDOWN && evt.button.button == SDL_BUTTON_LEFT && onRect(sliderBox)){
+            scrollBarPressed = true;
+            SDL_GetMouseState(NULL, &delta);
+        }
+        if(evt.type == SDL_MOUSEBUTTONUP && evt.button.button == SDL_BUTTON_LEFT)
+            scrollBarPressed = false;
+
+        if(scrollBarPressed){
+            SDL_GetMouseState(NULL, &y);
+            shift += y - delta;
+            delta = y;
+            if(shift < 0) shift = 0;
+            if(shift+(int)height > box.h) shift = box.h - (int)height;
+        }
+    }
+
     //Show directories and files
     if(type == GUItypes::BUTTON){
         for(int i = 0; i < entries.size(); i++){
-            SDL_Rect butBox = {box.x, box.y + 1 + fontSize*i + fontSize, box.w, fontSize};
-            if(onRect(butBox) && evt.type == SDL_MOUSEBUTTONDOWN && evt.button.button == SDL_BUTTON_LEFT)
+            int y_position = box.y + 1 + fontSize*i-shift*((fontSize*entries.size())/box.h);
+
+            if(box.y-y_position <= 0){
+                if(y_position - fontSize> box.h) break;
+                SDL_Rect butBox = {box.x, y_position, box.w, fontSize};
+                if(onRect(butBox) && evt.type == SDL_MOUSEBUTTONDOWN && evt.button.button == SDL_BUTTON_LEFT)
                 onClick(entries[i]);
-            renderText(entries[i], butBox, fontSize, false);
+                renderText(entries[i], butBox, fontSize, false);
+            }
         }
     }
     return;
