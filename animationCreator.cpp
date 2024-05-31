@@ -10,8 +10,8 @@
 #include<string>
 #include<filesystem>
 
-int WIDTH = 1000;
-int HEIGHT = 600;
+int WIDTH = 1600;
+int HEIGHT = 800;
 
 FT_Library ft;
 SDL_Color colors[256];
@@ -28,6 +28,29 @@ enum GUItypes{
     BUTTON = 1
 };
 
+struct transform_struct{
+    int x;
+    int y;
+    int w;
+    int h;
+    int scale_x = 1;
+    int scale_y = 1;
+    int angle = 0;
+    //SDL_Point rotationCenter;
+    //SDL_FLIP stauts?
+};
+
+struct sprite_struct{
+    std::string path;
+    transform_struct transform;
+    //std::vector<some INT ig?
+    SDL_Texture *texture;
+};
+//think of them as layered images
+std::vector<sprite_struct> sprites;
+
+void renderSprites();
+void loadBMP(std::string path);
 std::string intToString(int numb);
 void loadFont(int fontSize);
 void loadSprites();
@@ -41,14 +64,6 @@ void button(std::string label, SDL_Rect buttonbox, int fontSize, void(*onClick)(
 void scrollBar(GUItypes type, SDL_Rect box, std::vector<std::string> entries, int fontSize, void (*onClick)(std::string));
 
 bool onRect(SDL_Rect rect);
-
-struct spr{
-    int rotation;
-    int x, y;
-    int w, h;
-    SDL_Texture *txtr;
-};
-std::vector<spr> sprites;
 
 struct save_info{
     std::string sprite_category, sprite_name;
@@ -84,6 +99,7 @@ int main(int argc, char *argv[]){
         SDL_SetRenderDrawColor(rend, 255,255,255,255);
 
         browseDirectory(CD, {10, 10, 300, 300}, 18);
+        renderSprites();
 
         if(evt.type == SDL_QUIT)
             break;
@@ -112,6 +128,7 @@ void browseDirectory(std::string &cd, SDL_Rect box, int fontSize){
     SDL_RenderDrawRect(rend, &box);
     SDL_RenderDrawLine(rend, box.x, box.y + fontSize + 2, box.x + box.w - 1, box.y + fontSize + 2);
 
+    //cdBack
     button("..", {box.x + box.w - fontSize, box.y, fontSize, fontSize}, fontSize, &cdBack);
 
     //Print current directory
@@ -159,8 +176,28 @@ void selectDirectory(std::string label){
         }
     }    
     if(a_folder) CD = label;
-    //else if extension == ".bmp"// load an image
+    else 
+        if(extension == ".bmp")
+            loadBMP(label);
     return;
+}
+
+void loadBMP(std::string path){    
+    //check if such one already exists
+    for(sprite_struct &obj : sprites)
+        if(obj.path == path)
+            return;
+
+    SDL_Surface *surf = SDL_LoadBMP(path.c_str());
+    sprites.push_back({path, {WIDTH/2-surf->w/2, HEIGHT/2 - surf->h/2, surf->w, surf->h}, SDL_CreateTextureFromSurface(rend, surf)});
+    SDL_FreeSurface(surf);
+}
+
+void renderSprites(){
+    for(sprite_struct &obj : sprites){
+        SDL_Rect pos = {obj.transform.x, obj.transform.y, obj.transform.w, obj.transform.h};
+        SDL_RenderCopyEx(rend, obj.texture, NULL, &pos, obj.transform.angle, NULL, SDL_FLIP_NONE);
+    }
 }
 
 void scrollBar(GUItypes type, SDL_Rect box, std::vector<std::string> entries, int fontSize, void (*onClick)(std::string)){
