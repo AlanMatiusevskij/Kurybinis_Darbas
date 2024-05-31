@@ -41,7 +41,7 @@ struct transform_struct{
     int scale_y = 1;
     int angle = 0;
     //SDL_Point rotationCenter;
-    //SDL_FLIP stauts?
+    //SDL_FLIP status?
 };
 
 struct sprite_struct{
@@ -49,25 +49,29 @@ struct sprite_struct{
     transform_struct transform;
     std::vector<int8_t> alphas;
     SDL_Texture *texture;
+    SDL_Texture *transparencyMask;
 };
 //think of them as layered images
 std::vector<sprite_struct> sprites;
 
-void renderSprites();
+void renderSprites(bool transparencyMask);
+void moveSprites();
+
 void loadBMP(std::string path);
-std::string intToString(int numb);
 void loadFont(int fontSize);
-void loadSprites();
+
 void selectDirectory(std::string label);
 void browseDirectory(std::string &cd, SDL_Rect box, int fontSize);
 void cdBack();
 
+//UI
 void renderText(std::string sentence, SDL_Rect textBox, int fontSize, bool newLines);
 void slider(std::string label, int fontSize, SDL_Rect sliderBox, int &value, int minValue, int maxValue);
 void button(std::string label, SDL_Rect buttonbox, int fontSize, void(*onClick)());
 void scrollBar(GUItypes type, SDL_Rect box, std::vector<std::string> entries, int fontSize, void (*onClick)(std::string));
 
 bool onRect(SDL_Rect rect);
+std::string intToString(int numb);
 
 struct save_info{
     std::string sprite_category, sprite_name;
@@ -76,12 +80,10 @@ struct save_info{
     int dividend;
 };
 
-void place();
-void render();
-
 void selectDirectory();
 void saveToFile();
 
+void timeline();
 void clearFrames();
 void saveFrame();
 
@@ -104,7 +106,9 @@ int main(int argc, char *argv[]){
         SDL_SetRenderDrawColor(rend, 255,255,255,255);
 
         browseDirectory(CD, {10, 10, 300, 300}, 18);
-        //renderSprites();
+
+        moveSprites();
+        renderSprites(false);
 
         if(evt.type == SDL_QUIT)
             break;
@@ -200,7 +204,10 @@ void loadBMP(std::string path){
     //Load surface and save information
     SDL_Surface *surf = SDL_LoadBMP(path.c_str());
     sprites.push_back({path, {WIDTH/2-surf->w/2, HEIGHT/2 - surf->h/2, surf->w, surf->h}, std::vector<int8_t>(std::ceil(float(surf->w*surf->h)/8)), SDL_CreateTextureFromSurface(rend, surf)});
-    //int total_bitNumb = surf->w*surf->h;
+    
+    //Surface for creating transparency mask.
+    SDL_Surface *transpMask = SDL_CreateRGBSurfaceWithFormat(0, surf->w, surf->h, 8*4, SDL_PixelFormatEnum::SDL_PIXELFORMAT_RGBA32);
+    SDL_LockSurface(transpMask);
 
     //Save all 'intangible' points
     //by filling a vector with 11111111's, indicating non_complete_transparency.
@@ -214,33 +221,37 @@ void loadBMP(std::string path){
         for(int _x = 0; _x < surf->w; _x++){
             Uint32 _colorValues = *(Uint32*)((Uint8*)((Uint8*)surf->pixels + _y*surf->pitch + _x*surf->format->BytesPerPixel));
             SDL_GetRGBA(_colorValues, surf->format, (Uint8*)red, (Uint8*)green, (Uint8*)blue, (Uint8*)alfa);
+
+            Uint8 *pixel = (Uint8*)transpMask->pixels;
+            pixel+=_y*transpMask->pitch+_x*transpMask->format->BytesPerPixel;
+
             if(*alfa == 0){
                 int byteNumb = (_y*surf->w + _x)/8;
                 int bitNumb = (_y*surf->w + _x)%8;
                 std::string binary = std::bitset<8>(sprites[sprites.size()-1].alphas[byteNumb]).to_string();
                 binary[bitNumb] = '0';
                 sprites[sprites.size()-1].alphas[byteNumb] = (int8_t)std::bitset<8>(binary).to_ulong();
+                //                                  R                G                B                  A
+                *((Uint32*)pixel) = (Uint32)((Uint8)255 << 0 | (Uint8)0 << 8 | (Uint8)0 << 16 | (Uint8)100 << 24);
             }
+            else
+                *((Uint32*)pixel) = (Uint32)((Uint8)0 << 0 | (Uint8)255 << 8 | (Uint8)0 << 16 | (Uint8)100 << 24);
         }
+    SDL_UnlockSurface(transpMask);
+    sprites[sprites.size()-1].transparencyMask = SDL_CreateTextureFromSurface(rend, transpMask);
 
     //Clean up
     delete red, green, blue, alfa;
     SDL_UnlockSurface(surf);
+    SDL_FreeSurface(transpMask);
     SDL_FreeSurface(surf);
 }
 
-void renderSprites(){
-    for(int i = 0; i < sprites.size(); i++){
-        // SDL_Rect pos = {obj.transform.x, obj.transform.y, obj.transform.w, obj.transform.h};
-        // SDL_RenderCopyEx(rend, obj.texture, NULL, &pos, obj.transform.angle, NULL, SDL_FLIP_NONE);
-        for(int y = 0; y < sprites[i].transform.h; y++){
-            for(int x = 0; x < sprites[i].transform.w; x++){
-                if(std::bitset<8>(sprites[i].alphas[(y*sprites[i].transform.w + x)/8]).to_string()[(y*sprites[i].transform.w + x)%8] == '1')
-                    SDL_SetRenderDrawColor(rend, 0,255,0,255);
-                else SDL_SetRenderDrawColor(rend, 255,0,0,255);
-                SDL_RenderDrawPoint(rend, sprites[i].transform.x + x, sprites[i].transform.y + y);
-            }
-        }
+void renderSprites(bool transparencyMask){
+    for(sprite_struct &obj : sprites){
+        SDL_Rect pos = {obj.transform.x, obj.transform.y, obj.transform.w, obj.transform.h};
+        SDL_RenderCopyEx(rend, obj.texture, NULL, &pos, obj.transform.angle, NULL, SDL_FLIP_NONE);
+        if(transparencyMask) SDL_RenderCopyEx(rend, obj.transparencyMask, NULL, &pos, obj.transform.angle, NULL, SDL_FLIP_NONE);
     }
 }
 
@@ -303,15 +314,6 @@ void scrollBar(GUItypes type, SDL_Rect box, std::vector<std::string> entries, in
         }
     }
     return;
-}
-
-void loadSprites(){
-    std::string path = "./assets/images/stovintis";
-    for(const auto &entry : std::filesystem::directory_iterator(path)){
-        if(entry.path().extension() == ".bmp")
-            std::cout << entry.path().filename() << "\n";
-    }
-
 }
 
 void loadFont(int fontSize){
@@ -382,4 +384,44 @@ void renderText(std::string sentence, SDL_Rect textBox, int fontSize, bool newLi
         totalWidth+=fontSize/4;
     }
     FT_Done_Face(face);
+}
+
+bool isOnTransparentPoint(sprite_struct &obj){
+    int x, y;
+    SDL_GetMouseState(&x, &y);
+
+    int indx = (x-obj.transform.x)+(y-obj.transform.y)*obj.transform.w;
+    if(!onRect({obj.transform.x, obj.transform.y, obj.transform.w, obj.transform.h})) return false;
+    if(std::bitset<8>(obj.alphas[indx/8]).to_string()[indx%8] == '1') return true;
+    return false;
+}
+
+void moveSprites(){
+    static bool onButton = false;
+    static int index = 0;
+    static int prev_x, prev_y;
+    int c_x, c_y;
+    SDL_GetMouseState(&c_x, &c_y);
+
+    for(int i = sprites.size()-1; i>=0; i--){
+        if(isOnTransparentPoint(sprites[i]) && evt.type == SDL_MOUSEBUTTONDOWN && evt.button.button == SDL_BUTTON_LEFT){
+            prev_x = c_x;
+            prev_y = c_y;
+            onButton = true;
+            index = i;
+            break;
+        }
+        if(evt.type == SDL_MOUSEBUTTONUP && evt.button.button == SDL_BUTTON_LEFT){
+            onButton = false;            
+            break;
+        }
+    }
+
+    if(onButton){
+        sprites[index].transform.x += c_x-prev_x;
+        sprites[index].transform.y += c_y-prev_y;
+
+        prev_x = c_x;
+        prev_y = c_y;
+    }
 }
