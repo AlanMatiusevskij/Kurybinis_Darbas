@@ -8,10 +8,14 @@
 #include<iostream>
 #include<vector>
 #include<string>
+#include<cmath>
+#include<bitset>
 #include<filesystem>
+#include<algorithm>
 
 int WIDTH = 1600;
 int HEIGHT = 800;
+int UPS = 60;
 
 FT_Library ft;
 SDL_Color colors[256];
@@ -43,7 +47,7 @@ struct transform_struct{
 struct sprite_struct{
     std::string path;
     transform_struct transform;
-    //std::vector<some INT ig?
+    std::vector<int8_t> alphas;
     SDL_Texture *texture;
 };
 //think of them as layered images
@@ -91,7 +95,8 @@ int main(int argc, char *argv[]){
 
     for(int i = 0; i < 256; i++)
         colors[i].r = colors[i].g = colors[i].b = colors[i].a= i;
-         
+
+
     while(true){
         SDL_PollEvent(&evt);
         SDL_SetRenderDrawColor(rend, 30,30,30,255);
@@ -99,11 +104,12 @@ int main(int argc, char *argv[]){
         SDL_SetRenderDrawColor(rend, 255,255,255,255);
 
         browseDirectory(CD, {10, 10, 300, 300}, 18);
-        renderSprites();
+        //renderSprites();
 
         if(evt.type == SDL_QUIT)
             break;
         SDL_RenderPresent(rend);
+        SDL_Delay(1000/float(UPS));
     }
 
     FT_Done_FreeType(ft);
@@ -166,6 +172,9 @@ void selectDirectory(std::string label){
     std::string extension = "";
     bool a_folder = true;
 
+    //Check for some exceptions
+    if(label == "./Makefile") return;
+
     for(int i = label.size() - 1; i > 0; i--){
         extension+=label[i];
         if(label[i] == '/') break;
@@ -188,15 +197,50 @@ void loadBMP(std::string path){
         if(obj.path == path)
             return;
 
+    //Load surface and save information
     SDL_Surface *surf = SDL_LoadBMP(path.c_str());
-    sprites.push_back({path, {WIDTH/2-surf->w/2, HEIGHT/2 - surf->h/2, surf->w, surf->h}, SDL_CreateTextureFromSurface(rend, surf)});
+    sprites.push_back({path, {WIDTH/2-surf->w/2, HEIGHT/2 - surf->h/2, surf->w, surf->h}, std::vector<int8_t>(std::ceil(float(surf->w*surf->h)/8)), SDL_CreateTextureFromSurface(rend, surf)});
+    //int total_bitNumb = surf->w*surf->h;
+
+    //Save all 'intangible' points
+    //by filling a vector with 11111111's, indicating non_complete_transparency.
+    std::fill(sprites[sprites.size()-1].alphas.begin(), sprites[sprites.size()-1].alphas.end(), 255);
+
+
+    //And finding all points where the image is completely transparent and change vector[byte][bit] value to 0, indicating complete_transparency.
+    SDL_LockSurface(surf);
+    int *red{new int(0)}, *green{new int(0)}, *blue{new int(0)}, *alfa{new int(0)};
+    for(int _y = 0; _y < surf->h; _y++)
+        for(int _x = 0; _x < surf->w; _x++){
+            Uint32 _colorValues = *(Uint32*)((Uint8*)((Uint8*)surf->pixels + _y*surf->pitch + _x*surf->format->BytesPerPixel));
+            SDL_GetRGBA(_colorValues, surf->format, (Uint8*)red, (Uint8*)green, (Uint8*)blue, (Uint8*)alfa);
+            if(*alfa == 0){
+                int byteNumb = (_y*surf->w + _x)/8;
+                int bitNumb = (_y*surf->w + _x)%8;
+                std::string binary = std::bitset<8>(sprites[sprites.size()-1].alphas[byteNumb]).to_string();
+                binary[bitNumb] = '0';
+                sprites[sprites.size()-1].alphas[byteNumb] = (int8_t)std::bitset<8>(binary).to_ulong();
+            }
+        }
+
+    //Clean up
+    delete red, green, blue, alfa;
+    SDL_UnlockSurface(surf);
     SDL_FreeSurface(surf);
 }
 
 void renderSprites(){
-    for(sprite_struct &obj : sprites){
-        SDL_Rect pos = {obj.transform.x, obj.transform.y, obj.transform.w, obj.transform.h};
-        SDL_RenderCopyEx(rend, obj.texture, NULL, &pos, obj.transform.angle, NULL, SDL_FLIP_NONE);
+    for(int i = 0; i < sprites.size(); i++){
+        // SDL_Rect pos = {obj.transform.x, obj.transform.y, obj.transform.w, obj.transform.h};
+        // SDL_RenderCopyEx(rend, obj.texture, NULL, &pos, obj.transform.angle, NULL, SDL_FLIP_NONE);
+        for(int y = 0; y < sprites[i].transform.h; y++){
+            for(int x = 0; x < sprites[i].transform.w; x++){
+                if(std::bitset<8>(sprites[i].alphas[(y*sprites[i].transform.w + x)/8]).to_string()[(y*sprites[i].transform.w + x)%8] == '1')
+                    SDL_SetRenderDrawColor(rend, 0,255,0,255);
+                else SDL_SetRenderDrawColor(rend, 255,0,0,255);
+                SDL_RenderDrawPoint(rend, sprites[i].transform.x + x, sprites[i].transform.y + y);
+            }
+        }
     }
 }
 
@@ -253,7 +297,7 @@ void scrollBar(GUItypes type, SDL_Rect box, std::vector<std::string> entries, in
                 if(y_position - fontSize> box.h) break;
                 SDL_Rect butBox = {box.x, y_position, box.w, fontSize};
                 if(onRect(butBox) && evt.type == SDL_MOUSEBUTTONDOWN && evt.button.button == SDL_BUTTON_LEFT)
-                onClick(entries[i]);
+                    onClick(entries[i]);
                 renderText(entries[i], butBox, fontSize, false);
             }
         }
