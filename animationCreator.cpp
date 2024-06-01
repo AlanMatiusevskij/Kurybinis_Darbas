@@ -37,9 +37,9 @@ struct transform_struct{
     int y;
     int w;
     int h;
-    int scale_x = 1;
-    int scale_y = 1;
-    int angle = 0;
+    double scale_x = 1;
+    double scale_y = 1;
+    double angle = 0;
     //SDL_Point rotationCenter;
     //#SDL_FLIP status?
 };
@@ -72,6 +72,8 @@ void selectActiveSprite(std::string in);
 bool onRect(SDL_Rect rect);
 std::string intToString(int numb);
 int stringToInt(std::string string);
+std::string doubleToString(double in, int precision);
+double stringToDouble(std::string in);
 
 class UI{
 public:
@@ -82,7 +84,7 @@ public:
     void scrollBox(GUItypes type, SDL_Rect box, std::vector<std::string> &entries, int fontSize, void (*onClick)(std::string));
     void textInput(std::string &in, bool onlyNUMB, SDL_Rect box, int fontsize);
     
-    void inspectorSpecificValue(int &value, std::string name, SDL_Rect box, int fontSize);
+    void inspectorSpecificValue(double &value, std::string name, SDL_Rect box, int fontSize);
 private:
     //scrollBox() variables.
         int delta;
@@ -96,6 +98,7 @@ private:
         bool selectedText = false;
         int symIndx = 0;
         std::vector<int> symEndPos;
+        int numbOfCommas = 0;
 };
 UI explorer_class;
 UI inspector_class;
@@ -280,7 +283,7 @@ void loadBMP(std::string path){
 
 void renderSprites(bool transparencyMask){
     for(sprite_struct &obj : sprites){
-        SDL_Rect pos = {obj.transform.x, obj.transform.y, obj.transform.w*obj.transform.scale_x, obj.transform.h*obj.transform.scale_y};
+        SDL_Rect pos = {obj.transform.x, obj.transform.y, int(obj.transform.w*obj.transform.scale_x), int(obj.transform.h*obj.transform.scale_y)};
         SDL_RenderCopyEx(rend, obj.texture, NULL, &pos, obj.transform.angle, NULL, SDL_FLIP_NONE);
         if(transparencyMask) SDL_RenderCopyEx(rend, obj.transparencyMask, NULL, &pos, obj.transform.angle, NULL, SDL_FLIP_NONE);
     }
@@ -515,22 +518,18 @@ void inspector(SDL_Rect box, int fontSize){
     // * Section "List of sliders"
     detailsAreaY = box.y+box.h*2/10+6*fontSize+50;
     inspector_class.renderText("Tracked angle sliders: ", {box.x + 15, detailsAreaY, box.x-30, fontSize}, fontSize, false);
-
-
 }
 
-void UI::inspectorSpecificValue(int &value, std::string name, SDL_Rect box, int fontSize){
-    std::string tmp = intToString(value);
+void UI::inspectorSpecificValue(double &value, std::string name, SDL_Rect box, int fontSize){
+    std::string tmp = doubleToString(value, 2);
     renderText(name, {box.x, box.y, box.w , fontSize}, fontSize, false);
     textInput(tmp, true, {box.x+symEndPos[symEndPos.size()-1] + fontSize/5, box.y, box.w - (int)(name.size()+1)*fontSize, fontSize}, fontSize);
-    value = stringToInt(tmp);
+    value = stringToDouble(tmp);
 }
 
 void UI::textInput(std::string &in, bool onlyNUMB, SDL_Rect box, int fontsize){
     int x, y;
     SDL_GetMouseState(&x, &y);
-    SDL_SetRenderDrawColor(rend, 255,255,255,255);
-    //SDL_RenderDrawLine(rend, box.x, box.y+box.h+2, box.x+box.w, box.y+box.h+2); line length = word length
 
     if(evt.type == SDL_MOUSEBUTTONDOWN && evt.button.button == SDL_BUTTON_LEFT){
         if(onRect(box)){
@@ -543,13 +542,18 @@ void UI::textInput(std::string &in, bool onlyNUMB, SDL_Rect box, int fontsize){
             input = "";
         }
     }
+
+    //Find how many commas or dots the value has.
+    numbOfCommas = 0;
+    for(char symb : input) if(symb == '.' || symb == ',') numbOfCommas++;
+
     //Get text input
     if(selectedText && evt.type == SDL_TEXTINPUT){
         std::string newWords = evt.text.text;
         if(onlyNUMB){
             //Ignore all numbers;
             for(int i = 0; i < newWords.size(); i++){
-                if((int)newWords[i] < 48 || (int)newWords[i] > 57)
+                if((((int)newWords[i]<48||(int)newWords[i]>57)&&newWords[i]== '.'&&newWords[i]==',') || (numbOfCommas > 0 && (newWords[i]==','||newWords[i]=='.')))
                     newWords.erase(newWords.begin() + i);
             }
         }
@@ -594,6 +598,7 @@ void UI::textInput(std::string &in, bool onlyNUMB, SDL_Rect box, int fontsize){
     else renderText(in, box, fontsize, false);
 
     //Draw underline
+    SDL_SetRenderDrawColor(rend, 255,255,255,255);
     SDL_RenderDrawLine(rend, box.x, box.y + box.h, box.x + symEndPos[symEndPos.size()-1], box.y + box.h);
 
     //Current pos `mark`(?)
@@ -636,7 +641,7 @@ int stringToInt(std::string string){
 }
 
 //can be a dot or a comma.
-double  stringToDouble(std::string in){
+double stringToDouble(std::string in){
     double _return = 0;
     if(in.size() == 0) return 1;
 
@@ -659,5 +664,23 @@ double  stringToDouble(std::string in){
     }
 
     if(in[0] == '-') _return*=-1;
+    return _return;
+}
+
+std::string doubleToString(double in, int precision){
+    std::string _return = "";
+    if(in == 0) return "0";
+
+    //Seperate integer and fractional parts.
+    int whole = int(in);
+    double fraction = in - whole;
+
+    //Save the integer part.
+    _return = intToString(whole);
+    _return += ".";
+
+    //Save fractional part to the provided precision.
+    _return += intToString(int(fraction*std::pow(10, precision)));
+
     return _return;
 }
