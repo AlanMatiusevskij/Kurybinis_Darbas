@@ -41,10 +41,11 @@ struct transform_struct{
     int scale_y = 1;
     int angle = 0;
     //SDL_Point rotationCenter;
-    //SDL_FLIP status?
+    //#SDL_FLIP status?
 };
 
 struct sprite_struct{
+    //order in layers?
     std::string path;
     transform_struct transform;
     std::vector<int8_t> alphas;
@@ -62,16 +63,34 @@ void loadFont(int fontSize);
 
 void selectDirectory(std::string label);
 void browseDirectory(std::string &cd, SDL_Rect box, int fontSize);
-void cdBack();
+void cdBack();  
 
-//UI
-void renderText(std::string sentence, SDL_Rect textBox, int fontSize, bool newLines);
-void slider(std::string label, int fontSize, SDL_Rect sliderBox, int &value, int minValue, int maxValue);
-void button(std::string label, SDL_Rect buttonbox, int fontSize, void(*onClick)());
-void scrollBar(GUItypes type, SDL_Rect box, std::vector<std::string> entries, int fontSize, void (*onClick)(std::string));
+std::string selectedSprite = "";
+void inspector(SDL_Rect box, int fontSize);
+void selectActiveSprite(std::string in);
 
 bool onRect(SDL_Rect rect);
 std::string intToString(int numb);
+
+class UI{
+public:
+    //UI
+    void renderText(std::string sentence, SDL_Rect textBox, int fontSize, bool newLines);
+    void slider(std::string label, int fontSize, SDL_Rect sliderBox, int &value, int minValue, int maxValue);
+    void button(std::string label, SDL_Rect buttonbox, int fontSize, void(*onClick)());
+    void scrollBox(GUItypes type, SDL_Rect box, std::vector<std::string> &entries, int fontSize, void (*onClick)(std::string));
+private:
+    int delta;
+    bool scrollBarPressed = false;
+
+    //shift is scroll bar position;
+    int shift = 0; 
+
+    //Check if new entries
+    std::vector<std::string> old{};
+};
+UI explorer_class;
+UI inspector_class;
 
 struct save_info{
     std::string sprite_category, sprite_name;
@@ -80,12 +99,11 @@ struct save_info{
     int dividend;
 };
 
-void selectDirectory();
-void saveToFile();
-
 void timeline();
 void clearFrames();
 void saveFrame();
+
+void saveToFile();
 
 int main(int argc, char *argv[]){
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_TIMER);
@@ -105,7 +123,8 @@ int main(int argc, char *argv[]){
         SDL_RenderClear(rend);
         SDL_SetRenderDrawColor(rend, 255,255,255,255);
 
-        browseDirectory(CD, {10, 10, 300, 300}, 18);
+        browseDirectory(CD, {10, 10, 270, 200}, 18);
+        inspector({WIDTH-WIDTH/5, 30, WIDTH/5 - 10, HEIGHT - 60}, 18);
 
         moveSprites();
         renderSprites(false);
@@ -121,7 +140,7 @@ int main(int argc, char *argv[]){
     return 0;
 }
 
-void button(std::string label, SDL_Rect buttonbox, int fontSize, void(*onClick)()){
+void UI::button(std::string label, SDL_Rect buttonbox, int fontSize, void(*onClick)()){
     if(onRect(buttonbox) && evt.type == SDL_MOUSEBUTTONDOWN && evt.button.button == SDL_BUTTON_LEFT)
         onClick();
     renderText(label, buttonbox, fontSize, false);
@@ -139,12 +158,12 @@ void browseDirectory(std::string &cd, SDL_Rect box, int fontSize){
     SDL_RenderDrawLine(rend, box.x, box.y + fontSize + 2, box.x + box.w - 1, box.y + fontSize + 2);
 
     //cdBack
-    button("..", {box.x + box.w - fontSize, box.y, fontSize, fontSize}, fontSize, &cdBack);
+    explorer_class.button("...", {box.x + box.w - fontSize, box.y, fontSize, fontSize}, fontSize, &cdBack);
 
     //Print current directory
-    renderText(cd, {box.x + 1, box.y + 1, box.w - 1, fontSize}, fontSize, false);
+    explorer_class.renderText(cd, {box.x + 1, box.y + 1, box.w - 1, fontSize}, fontSize, false);
 
-    scrollBar(GUItypes::BUTTON, {box.x, box.y + fontSize + 2, box.w, box.h -fontSize-2}, files, fontSize, &selectDirectory);
+    explorer_class.scrollBox(GUItypes::BUTTON, {box.x, box.y + fontSize + 2, box.w, box.h -fontSize-2}, files, fontSize, &selectDirectory);
 }
 
 void cdBack(){
@@ -255,30 +274,25 @@ void renderSprites(bool transparencyMask){
     }
 }
 
-void scrollBar(GUItypes type, SDL_Rect box, std::vector<std::string> entries, int fontSize, void (*onClick)(std::string)){
+void UI::scrollBox(GUItypes type, SDL_Rect box, std::vector<std::string> &entries, int fontSize, void (*onClick)(std::string)){
+    int sliderWidth = 8;
     int y;
-    static int delta;
-    static bool scrollBarPressed = false;
 
-    //shift is scroll bar position;
-    static int shift = 0; 
-
-    //Check if new entries
-    static std::vector<std::string> old{};
     if(old != entries){
         old = entries;
         shift = 0;
     }
 
     //Display the bar slot
-    SDL_Rect sliderSlot = {box.x + box.w - 8, box.y, 8, box.h};
+    SDL_Rect sliderBox;
+    SDL_Rect sliderSlot = {box.x + box.w - sliderWidth, box.y, sliderWidth, box.h};
     SDL_RenderDrawRect(rend, &sliderSlot);
 
     //Calculate the heigth of the bar and display it;
     if((1 + fontSize*entries.size()) > box.h){
         double height = (double(box.h*box.h)/((1+fontSize)*(entries.size()+2)));
 
-        SDL_Rect sliderBox = {box.x + box.w - 8, box.y + shift, 8, (int)height};
+        sliderBox = {box.x + box.w - sliderWidth, box.y + shift, sliderWidth, (int)height};
         SDL_SetRenderDrawColor(rend, 0,0,0,140);
         SDL_RenderFillRect(rend, &sliderBox);
 
@@ -302,18 +316,17 @@ void scrollBar(GUItypes type, SDL_Rect box, std::vector<std::string> entries, in
     //Show directories and files
     if(type == GUItypes::BUTTON){
         for(int i = 0; i < entries.size(); i++){
-            int y_position = box.y + 1 + fontSize*i-shift*((fontSize*entries.size())/box.h);
+            int y_position = box.y + 1 - (double(shift)/box.h)*fontSize*entries.size() + fontSize*i;
 
             if(box.y-y_position <= 0){
                 if(y_position - fontSize> box.h) break;
-                SDL_Rect butBox = {box.x, y_position, box.w, fontSize};
+                SDL_Rect butBox = {box.x, y_position, box.w-sliderWidth, fontSize};
                 if(onRect(butBox) && evt.type == SDL_MOUSEBUTTONDOWN && evt.button.button == SDL_BUTTON_LEFT)
                     onClick(entries[i]);
                 renderText(entries[i], butBox, fontSize, false);
             }
         }
     }
-    return;
 }
 
 void loadFont(int fontSize){
@@ -326,7 +339,7 @@ void loadFont(int fontSize){
     FT_Set_Pixel_Sizes(face, fontSize, fontSize);
 }
 
-void renderText(std::string sentence, SDL_Rect textBox, int fontSize, bool newLines){
+void UI::renderText(std::string sentence, SDL_Rect textBox, int fontSize, bool newLines){
     std::vector<std::string> words;
     std::string ind_word{""};
     FT_Bitmap ftbitmap;
@@ -424,4 +437,40 @@ void moveSprites(){
         prev_x = c_x;
         prev_y = c_y;
     }
+}
+
+void selectActiveSprite(std::string in){
+    selectedSprite = in;
+}
+
+void inspector(SDL_Rect box, int fontSize){
+    int x, y;
+    SDL_GetMouseState(&x, &y);
+    
+    //Borders and lines
+    SDL_SetRenderDrawColor(rend, 255,255,255,255);
+    inspector_class.renderText("Inspector", {box.x + 2, box.y - fontSize - 3, box.w, fontSize}, fontSize, false);
+    SDL_RenderDrawRect(rend, &box);
+    SDL_RenderDrawLine(rend, box.x, box.y + box.h*2/10-1, box.x + box.w-1, box.y + box.h*2/10-1);
+
+    //Create a scroll box:
+    //Get all loaded paths into a string.
+    std::vector<std::string> loaded;
+    for(sprite_struct &obj : sprites)
+        loaded.push_back(obj.path);
+    if(loaded.size() == 0){
+        inspector_class.renderText("Active sprites.", {box.x + 2, box.y + 5, box.w - 2, fontSize+4}, fontSize+4, false);
+        inspector_class.renderText("Select a .bmp file from the explorer to open one.", {box.x + 2, box.y + 7 + fontSize+4, box.w - 2, fontSize-4}, fontSize-4, false);
+    }
+    else inspector_class.scrollBox(GUItypes::BUTTON, {box.x, box.y, box.w, box.h*2/10}, loaded, fontSize-4, &selectActiveSprite);
+
+    //Details about the selected sprite.
+    int detailsAreaY = box.y+box.h*2/10-1+12;
+    std::string selected = "";
+    for(int i = selectedSprite.size()-1; i >0; i--)
+        if(selectedSprite[i] == '/') break;
+        else selected+=selectedSprite[i];
+    selected = reverseString(selected);
+    
+    inspector_class.renderText(selected, {box.x + 20, detailsAreaY, box.w - 20, fontSize}, fontSize, false);
 }
