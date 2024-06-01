@@ -81,6 +81,8 @@ public:
     void button(std::string label, SDL_Rect buttonbox, int fontSize, void(*onClick)());
     void scrollBox(GUItypes type, SDL_Rect box, std::vector<std::string> &entries, int fontSize, void (*onClick)(std::string));
     void textInput(std::string &in, bool onlyNUMB, SDL_Rect box, int fontsize);
+    
+    void inspectorSpecificValue(int &value, std::string name, SDL_Rect box, int fontSize);
 private:
     //scrollBox() variables.
         int delta;
@@ -97,6 +99,10 @@ private:
 };
 UI explorer_class;
 UI inspector_class;
+
+UI specStat1;
+UI specStat2;
+UI specStat3;
 
 struct save_info{
     std::string sprite_category, sprite_name;
@@ -463,19 +469,23 @@ void inspector(SDL_Rect box, int fontSize){
     SDL_RenderDrawRect(rend, &box);
     SDL_RenderDrawLine(rend, box.x, box.y + box.h*2/10-1, box.x + box.w-1, box.y + box.h*2/10-1);
     SDL_RenderDrawLine(rend, box.x + 15, box.y+box.h*2/10+25+3*fontSize, box.x + box.w - 15, box.y+box.h*2/10+25+3*fontSize);
+    SDL_RenderDrawLine(rend, box.x, box.y+box.h*2/10+6*fontSize+45, box.x + box.w, box.y+box.h*2/10+6*fontSize+45);
 
-    //Create a scroll box:
+    // * Section "List of active sprites"
+
     //Get all loaded paths into a string.
     std::vector<std::string> loaded;
     for(sprite_struct &obj : sprites)
         loaded.push_back(obj.path);
+
+    //Create a scroll box:
     if(loaded.size() == 0){
         inspector_class.renderText("Active sprites.", {box.x + 2, box.y + 5, box.w - 2, fontSize+4}, fontSize+4, false);
         inspector_class.renderText("Select a .bmp file from the explorer to open one.", {box.x + 2, box.y + 7 + fontSize+4, box.w - 2, fontSize-4}, fontSize-4, false);
     }
     else inspector_class.scrollBox(GUItypes::BUTTON, {box.x, box.y, box.w, box.h*2/10}, loaded, fontSize-4, &selectActiveSprite);
 
-    //Details about the selected sprite.
+    // * Section "Selected sprite - it's details"
     int detailsAreaY = box.y+box.h*2/10-1+12;
     std::string selected = "enoN";
     for(int i = selectedSprite.size()-1; i >0; i--){
@@ -491,13 +501,29 @@ void inspector(SDL_Rect box, int fontSize){
 
     //Selected sprite's text input boxes for scale and rotation.
     if(selected != "None"){
-        detailsAreaY = box.y+box.h*2/10+3*fontSize+30; 
+        //Get new y position and index of the selected sprite.
+        detailsAreaY = box.y+box.h*2/10+3*fontSize+31; 
         int selectedIndex;
         for(int i = 0; i < sprites.size(); i++) if(sprites[i].path == selectedSprite) selectedIndex = i;
-        std::string tmp = intToString(sprites[selectedIndex].transform.scale_x);
-        inspector_class.textInput(tmp, true, {box.x+30, detailsAreaY, box.w-60, fontSize}, fontSize);
-        sprites[selectedIndex].transform.scale_x = stringToInt(tmp);
+        
+        //Convert value to string, show it as an editable text box, translate the value, which can be modified, back to an int.
+        specStat1.inspectorSpecificValue(sprites[selectedIndex].transform.scale_x, "Scale X: ", {box.x + 30, detailsAreaY, box.x-60, fontSize}, fontSize);
+        specStat2.inspectorSpecificValue(sprites[selectedIndex].transform.scale_y, "Scale Y: ", {box.x + 30, detailsAreaY+fontSize+3, box.x-60, fontSize}, fontSize);
+        specStat3.inspectorSpecificValue(sprites[selectedIndex].transform.angle, "Angle: ", {box.x + 30, detailsAreaY+2*fontSize+6, box.x-60, fontSize}, fontSize);
     }
+
+    // * Section "List of sliders"
+    detailsAreaY = box.y+box.h*2/10+6*fontSize+50;
+    inspector_class.renderText("Tracked angle sliders: ", {box.x + 15, detailsAreaY, box.x-30, fontSize}, fontSize, false);
+
+
+}
+
+void UI::inspectorSpecificValue(int &value, std::string name, SDL_Rect box, int fontSize){
+    std::string tmp = intToString(value);
+    renderText(name, {box.x, box.y, box.w , fontSize}, fontSize, false);
+    textInput(tmp, true, {box.x+symEndPos[symEndPos.size()-1] + fontSize/5, box.y, box.w - (int)(name.size()+1)*fontSize, fontSize}, fontSize);
+    value = stringToInt(tmp);
 }
 
 void UI::textInput(std::string &in, bool onlyNUMB, SDL_Rect box, int fontsize){
@@ -606,5 +632,32 @@ int stringToInt(std::string string){
         multiplier*=10;
     }
 
+    return _return;
+}
+
+//can be a dot or a comma.
+double  stringToDouble(std::string in){
+    double _return = 0;
+    if(in.size() == 0) return 1;
+
+    int k = 0;
+    if(in[0] == '-') k = 1;
+    double multiplier = 0.1;
+    while(true){
+        if(in.size() == k) break;
+        if(in[k] == ',' || in[k] == '.')
+            break;
+        k++;
+        multiplier*=10;
+    }
+    
+    for(int i = 0; i<in.size(); i++){
+        if(in[i] != '-' && in[i] != ',' && in[i] != '.'){
+            _return += ((int)in[i]-48)*multiplier;
+            multiplier/=10;
+        }
+    }
+
+    if(in[0] == '-') _return*=-1;
     return _return;
 }
