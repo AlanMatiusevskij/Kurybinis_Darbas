@@ -71,6 +71,7 @@ void selectActiveSprite(std::string in);
 
 bool onRect(SDL_Rect rect);
 std::string intToString(int numb);
+int stringToInt(std::string string);
 
 class UI{
 public:
@@ -79,15 +80,20 @@ public:
     void slider(std::string label, int fontSize, SDL_Rect sliderBox, int &value, int minValue, int maxValue);
     void button(std::string label, SDL_Rect buttonbox, int fontSize, void(*onClick)());
     void scrollBox(GUItypes type, SDL_Rect box, std::vector<std::string> &entries, int fontSize, void (*onClick)(std::string));
+    void textInput(std::string &in, bool onlyNUMB, SDL_Rect box, int fontsize);
 private:
-    int delta;
-    bool scrollBarPressed = false;
-
-    //shift is scroll bar position;
-    int shift = 0; 
-
-    //Check if new entries
-    std::vector<std::string> old{};
+    //scrollBox() variables.
+        int delta;
+        bool scrollBarPressed = false;
+        //shift is scroll bar position;
+        int shift = 0; 
+        //Check if new entries  
+        std::vector<std::string> old{};
+    //textInput variables.
+        std::string input = "";
+        bool selectedText = false;
+        int symIndx = 0;
+        std::vector<int> symEndPos;
 };
 UI explorer_class;
 UI inspector_class;
@@ -268,7 +274,7 @@ void loadBMP(std::string path){
 
 void renderSprites(bool transparencyMask){
     for(sprite_struct &obj : sprites){
-        SDL_Rect pos = {obj.transform.x, obj.transform.y, obj.transform.w, obj.transform.h};
+        SDL_Rect pos = {obj.transform.x, obj.transform.y, obj.transform.w*obj.transform.scale_x, obj.transform.h*obj.transform.scale_y};
         SDL_RenderCopyEx(rend, obj.texture, NULL, &pos, obj.transform.angle, NULL, SDL_FLIP_NONE);
         if(transparencyMask) SDL_RenderCopyEx(rend, obj.transparencyMask, NULL, &pos, obj.transform.angle, NULL, SDL_FLIP_NONE);
     }
@@ -340,6 +346,8 @@ void loadFont(int fontSize){
 }
 
 void UI::renderText(std::string sentence, SDL_Rect textBox, int fontSize, bool newLines){
+    symEndPos.clear();
+    symEndPos.push_back(0);
     std::vector<std::string> words;
     std::string ind_word{""};
     FT_Bitmap ftbitmap;
@@ -393,6 +401,7 @@ void UI::renderText(std::string sentence, SDL_Rect textBox, int fontSize, bool n
             //clean up
             SDL_FreeSurface(glyph);
             SDL_DestroyTexture(txtr);
+            symEndPos.push_back(totalWidth);
         }
         totalWidth+=fontSize/4;
     }
@@ -440,7 +449,8 @@ void moveSprites(){
 }
 
 void selectActiveSprite(std::string in){
-    selectedSprite = in;
+    if(selectedSprite == in) selectedSprite = "";
+    else selectedSprite = in;
 }
 
 void inspector(SDL_Rect box, int fontSize){
@@ -452,6 +462,7 @@ void inspector(SDL_Rect box, int fontSize){
     inspector_class.renderText("Inspector", {box.x + 2, box.y - fontSize - 3, box.w, fontSize}, fontSize, false);
     SDL_RenderDrawRect(rend, &box);
     SDL_RenderDrawLine(rend, box.x, box.y + box.h*2/10-1, box.x + box.w-1, box.y + box.h*2/10-1);
+    SDL_RenderDrawLine(rend, box.x + 15, box.y+box.h*2/10+25+3*fontSize, box.x + box.w - 15, box.y+box.h*2/10+25+3*fontSize);
 
     //Create a scroll box:
     //Get all loaded paths into a string.
@@ -466,11 +477,134 @@ void inspector(SDL_Rect box, int fontSize){
 
     //Details about the selected sprite.
     int detailsAreaY = box.y+box.h*2/10-1+12;
-    std::string selected = "";
-    for(int i = selectedSprite.size()-1; i >0; i--)
+    std::string selected = "enoN";
+    for(int i = selectedSprite.size()-1; i >0; i--){
+        if(selectedSprite.size()-1 == i) selected = "";
         if(selectedSprite[i] == '/') break;
         else selected+=selectedSprite[i];
+    }
     selected = reverseString(selected);
     
-    inspector_class.renderText(selected, {box.x + 20, detailsAreaY, box.w - 20, fontSize}, fontSize, false);
+    inspector_class.renderText("Selected sprite:", {box.x + 15, detailsAreaY, box.w - 15, fontSize}, fontSize, false);
+    inspector_class.renderText(selected, {box.x + 30, detailsAreaY+fontSize+3, box.w - 30, fontSize}, fontSize, false);
+    inspector_class.renderText(selectedSprite, {box.x + 30, detailsAreaY+2*fontSize+6, box.w - 30, fontSize-4}, fontSize-4, false);
+
+    //Selected sprite's text input boxes for scale and rotation.
+    if(selected != "None"){
+        detailsAreaY = box.y+box.h*2/10+3*fontSize+30; 
+        int selectedIndex;
+        for(int i = 0; i < sprites.size(); i++) if(sprites[i].path == selectedSprite) selectedIndex = i;
+        std::string tmp = intToString(sprites[selectedIndex].transform.scale_x);
+        inspector_class.textInput(tmp, true, {box.x+30, detailsAreaY, box.w-60, fontSize}, fontSize);
+        sprites[selectedIndex].transform.scale_x = stringToInt(tmp);
+    }
+}
+
+void UI::textInput(std::string &in, bool onlyNUMB, SDL_Rect box, int fontsize){
+    int x, y;
+    SDL_GetMouseState(&x, &y);
+    SDL_SetRenderDrawColor(rend, 255,255,255,255);
+    //SDL_RenderDrawLine(rend, box.x, box.y+box.h+2, box.x+box.w, box.y+box.h+2); line length = word length
+
+    if(evt.type == SDL_MOUSEBUTTONDOWN && evt.button.button == SDL_BUTTON_LEFT){
+        if(onRect(box)){
+            selectedText = true;
+            input = in;
+            symIndx = in.size();
+        }
+        else{
+            selectedText = false;
+            input = "";
+        }
+    }
+    //Get text input
+    if(selectedText && evt.type == SDL_TEXTINPUT){
+        std::string newWords = evt.text.text;
+        if(onlyNUMB){
+            //Ignore all numbers;
+            for(int i = 0; i < newWords.size(); i++){
+                if((int)newWords[i] < 48 || (int)newWords[i] > 57)
+                    newWords.erase(newWords.begin() + i);
+            }
+        }
+        newWords.shrink_to_fit();
+        if(newWords.size() != 0){
+            input.insert(symIndx, newWords);
+            symIndx++;
+        }
+    }
+
+    //Check for specific key presses
+    if(selectedText && evt.type == SDL_KEYDOWN){
+        switch(evt.key.keysym.sym){
+            case SDLK_BACKSPACE:
+                if(input.size() > 0 && symIndx > 0){
+                    input.erase(input.begin()+symIndx-1);
+                    symIndx--;
+                }
+                break;
+            case SDLK_ESCAPE:
+                selectedText = false;
+                input = "";
+                break;
+            case SDLK_RETURN:
+                selectedText = false;
+                in = input;
+                break;
+            case SDLK_LEFT:
+                symIndx--;
+                break;
+            case SDLK_RIGHT:
+                symIndx++;
+                break;
+        }
+        input.shrink_to_fit();
+        if(symIndx>input.size()) symIndx = input.size();
+        if(symIndx<0) symIndx = 0;
+    }
+    
+    //Render value.
+    if(selectedText) renderText(input, box, fontsize, false);
+    else renderText(in, box, fontsize, false);
+
+    //Draw underline
+    SDL_RenderDrawLine(rend, box.x, box.y + box.h, box.x + symEndPos[symEndPos.size()-1], box.y + box.h);
+
+    //Current pos `mark`(?)
+    if(selectedText)
+        SDL_RenderDrawLine(rend, box.x + symEndPos[symIndx], box.y, box.x + symEndPos[symIndx], box.y + box.h);
+
+}
+
+std::string intToString(int numb){
+    std::string _return_backwards = "";
+
+    if(numb == 0)
+        _return_backwards += "0";
+    while(numb != 0){
+        _return_backwards += char(numb%10+48);
+        numb/=10;
+    }
+
+    std::string _return = "";
+    for(int i = _return_backwards.size()-1; i>=0; i--)
+        _return+=_return_backwards[i];
+
+    return _return;
+}
+
+int stringToInt(std::string string){
+    if(string.size() == 0) return 1;
+
+    int _return = 0;
+    int multiplier = 1;
+    for(int i = string.size()-1; i >= 0; i--){
+        if(i == 0 && string[i] == '-') _return*=-1;
+        else if(i!=0 && string[i] == '-') return 0;
+
+        _return += ((int)string[i]-48)*multiplier;
+        multiplier*=10;
+    }
+
+    return _return;
 }
