@@ -142,7 +142,7 @@ int main(int argc, char *argv[]){
         inspector({WIDTH-WIDTH/5, 30, WIDTH/5 - 10, HEIGHT - 60}, 18);
 
         moveSprites();
-        renderSprites(false);
+        renderSprites(true);
 
         if(evt.type == SDL_QUIT)
             break;
@@ -162,7 +162,7 @@ void UI::button(std::string label, SDL_Rect buttonbox, int fontSize, void(*onCli
 }
 
 void browseDirectory(std::string &cd, SDL_Rect box, int fontSize){
-    //Get current files in the directory TODO: error handling
+    //Get current files in the directory.
     std::vector<std::string> files;
     for(const auto &entry : std::filesystem::directory_iterator(cd)){
         files.push_back(entry.path().generic_string());
@@ -421,8 +421,8 @@ bool isOnTransparentPoint(sprite_struct &obj){
     int x, y;
     SDL_GetMouseState(&x, &y);
 
-    int indx = (x-obj.transform.x)+(y-obj.transform.y)*obj.transform.w;
-    if(!onRect({obj.transform.x, obj.transform.y, obj.transform.w, obj.transform.h})) return false;
+    if(!onRect({obj.transform.x, obj.transform.y, int(obj.transform.w*obj.transform.scale_x), int(obj.transform.h*obj.transform.scale_y)})) return false;
+    int indx = (y-obj.transform.y)*obj.transform.w/obj.transform.scale_y + (x-obj.transform.x)/obj.transform.scale_x;
     if(std::bitset<8>(obj.alphas[indx/8]).to_string()[indx%8] == '1') return true;
     return false;
 }
