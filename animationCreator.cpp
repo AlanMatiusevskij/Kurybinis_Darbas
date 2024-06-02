@@ -121,7 +121,7 @@ SDL_Texture* surfaceManipulation::createTextureAndDeleteSurface(SDL_Renderer *re
     return _return;
 }
 
-class UI{//
+class UI{
 public:
     //UI
     void renderText(std::string sentence, SDL_Rect textBox, int fontSize, bool newLines);
@@ -186,10 +186,16 @@ int main(int argc, char *argv[]){
 
         browseDirectory(CD, {10, 10, 270, 200}, 18);
         inspector({WIDTH-WIDTH/5, 30, WIDTH/5 - 10, HEIGHT - 60}, 18);
-
+        if(sprites.size() == 1){
+            sprites[0].transform.angle += 3;
+            for(int i = 0; i < sprites[0].transform.w; i++){
+                for(int a = 0; a < sprites[0].transform.h; a++)
+                    SDL_RenderDrawPoint(rend,sprites[0].transform.x+i+std::sinf(sprites[0].transform.angle*3.14/180)*std::sqrtf(std::pow(i-sprites[0].transform.w/2,2) + std::pow(a-sprites[0].transform.h/2, 2)), sprites[0].transform.y+a+std::cosf(sprites[0].transform.angle*3.14/180)*std::sqrtf(std::pow(i-sprites[0].transform.w/2,2) + std::pow(a-sprites[0].transform.h/2, 2)));
+            }
+        }
         moveSprites();
         renderSprites(false);
-
+    
         if(evt.type == SDL_QUIT)
             break;
         SDL_RenderPresent(rend);
@@ -207,20 +213,11 @@ void UI::button(std::string label, SDL_Rect buttonbox, int fontSize, void(*onCli
     renderText(label, buttonbox, fontSize, false);
 }
 
-std::vector<std::string> previous_files{};
-void displayDirectory(){
-
-}
-
 void browseDirectory(std::string &cd, SDL_Rect box, int fontSize){
     //Get current files in the directory.
     std::vector<std::string> files;
     for(const auto &entry : std::filesystem::directory_iterator(cd)){
         files.push_back(entry.path().generic_string());
-    }
-    if(previous_files == files){
-        displayDirectory();
-        return;
     }
 
     //Draw boxes
@@ -467,9 +464,9 @@ void UI::renderText(std::string sentence, SDL_Rect textBox, int fontSize, bool n
 bool isOnTransparentPoint(sprite_struct &obj){
     int x, y;
     SDL_GetMouseState(&x, &y);
-
-    if(!onRect({obj.transform.x, obj.transform.y, int(obj.transform.w*obj.transform.scale_x), int(obj.transform.h*obj.transform.scale_y)})) return false;
-    int indx = (y-obj.transform.y)*obj.transform.w/obj.transform.scale_y + (x-obj.transform.x)/obj.transform.scale_x;
+    if(obj.transform.x <= x+std::sinf((obj.transform.angle-2*obj.transform.angle)*3.14/180)*0.5*obj.transform.h && obj.transform.x + obj.transform.w > x+std::sinf((obj.transform.angle-2*obj.transform.angle)*3.14/180)*0.5*obj.transform.h && obj.transform.y <= y-std::cosf((obj.transform.angle-2*obj.transform.angle)*3.14/180+3.14/2)*0.5*obj.transform.h && obj.transform.y + obj.transform.h > y-std::cosf((obj.transform.angle-2*obj.transform.angle)*3.14/180+3.14/2)*0.5*obj.transform.h);
+    else return false;
+    int indx = (int(y-std::cosf((obj.transform.angle-2*obj.transform.angle)*3.14/180+3.14/2)*0.5*obj.transform.h)-obj.transform.y)*obj.transform.w/obj.transform.scale_y + (int(x+std::sinf((obj.transform.angle-2*obj.transform.angle)*3.14/180)*0.5*obj.transform.h)-obj.transform.x)/obj.transform.scale_x;
     if(std::bitset<8>(obj.alphas[indx/8]).to_string()[indx%8] == '1') return true;
     return false;
 }
