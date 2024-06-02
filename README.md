@@ -35,8 +35,9 @@ Komandas rašyti į terminalą. Kai matote `+`, tai toje vietoje įrašykite, ko
 8) `git push` paruoštus atnaujinimus ir pakeitmus sujungs ir išsaugos repository'je.
 10) `git config user.name " + slapyvardis/vardas "`, `git config user.email " + elPaštas "` nustatys, kieno vardu ir el. paštu daromi pakeitimai.
 11) `git config (--global) --unset user.email`, `git config (--global) --unset user.name` panaikins įvestą paštą ir slapyvardį.
-12) `git status` duos informacijos apie šakos pakeitimus.
-13) Jeigu norite atsijungti iš **git** kompiuteryje, reikia surasti **Credential manager -> Windows credentials -> Generic credentials**. Čia surasti **git** ir spausti **remove**.
+12) `git reset HEAD~` atšauks paskutinį commit'ą.
+13) `git status` duos informacijos apie šakos pakeitimus.
+14) Jeigu norite atsijungti iš **git** kompiuteryje, reikia surasti **Credential manager -> Windows credentials -> Generic credentials**. Čia surasti **git** ir spausti **remove**.
 
 ## Kaip sukurti SDL (c++) programą
 1) Atidaryti aplanką, kuriame yra repository, tai yra, jūsų IDE yra atidarytas **tik** tame aplanke.
