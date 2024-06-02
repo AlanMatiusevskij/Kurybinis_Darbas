@@ -69,6 +69,7 @@ std::string selectedSprite = "";
 void inspector(SDL_Rect box, int fontSize);
 void selectActiveSprite(std::string in);
 
+bool onRect(SDL_Rect rect, int x, int y);
 bool onRect(SDL_Rect rect);
 std::string intToString(int numb);
 int stringToInt(std::string string);
@@ -186,13 +187,6 @@ int main(int argc, char *argv[]){
 
         browseDirectory(CD, {10, 10, 270, 200}, 18);
         inspector({WIDTH-WIDTH/5, 30, WIDTH/5 - 10, HEIGHT - 60}, 18);
-        if(sprites.size() == 1){
-            sprites[0].transform.angle += 3;
-            for(int i = 0; i < sprites[0].transform.w; i++){
-                for(int a = 0; a < sprites[0].transform.h; a++)
-                    SDL_RenderDrawPoint(rend,sprites[0].transform.x+i+std::sinf(sprites[0].transform.angle*3.14/180)*std::sqrtf(std::pow(i-sprites[0].transform.w/2,2) + std::pow(a-sprites[0].transform.h/2, 2)), sprites[0].transform.y+a+std::cosf(sprites[0].transform.angle*3.14/180)*std::sqrtf(std::pow(i-sprites[0].transform.w/2,2) + std::pow(a-sprites[0].transform.h/2, 2)));
-            }
-        }
         moveSprites();
         renderSprites(false);
     
@@ -241,11 +235,13 @@ void cdBack(){
             return;
     }
 }
-
 bool onRect(SDL_Rect rect){
     int tmpMx, tmpMy;
     SDL_GetMouseState(&tmpMx, &tmpMy);
-    if(rect.x <= tmpMx && rect.x + rect.w > tmpMx && rect.y <= tmpMy && rect.y + rect.h > tmpMy)
+    return onRect(rect, tmpMx, tmpMy);
+}
+bool onRect(SDL_Rect rect, int x, int y){
+    if(rect.x <= x && rect.x + rect.w > x && rect.y <= y && rect.y + rect.h > y)
         return true;
     return false;
 }
@@ -464,9 +460,17 @@ void UI::renderText(std::string sentence, SDL_Rect textBox, int fontSize, bool n
 bool isOnTransparentPoint(sprite_struct &obj){
     int x, y;
     SDL_GetMouseState(&x, &y);
-    if(obj.transform.x <= x+std::sinf((obj.transform.angle-2*obj.transform.angle)*3.14/180)*0.5*obj.transform.h && obj.transform.x + obj.transform.w > x+std::sinf((obj.transform.angle-2*obj.transform.angle)*3.14/180)*0.5*obj.transform.h && obj.transform.y <= y-std::cosf((obj.transform.angle-2*obj.transform.angle)*3.14/180+3.14/2)*0.5*obj.transform.h && obj.transform.y + obj.transform.h > y-std::cosf((obj.transform.angle-2*obj.transform.angle)*3.14/180+3.14/2)*0.5*obj.transform.h);
-    else return false;
-    int indx = (int(y-std::cosf((obj.transform.angle-2*obj.transform.angle)*3.14/180+3.14/2)*0.5*obj.transform.h)-obj.transform.y)*obj.transform.w/obj.transform.scale_y + (int(x+std::sinf((obj.transform.angle-2*obj.transform.angle)*3.14/180)*0.5*obj.transform.h)-obj.transform.x)/obj.transform.scale_x;
+    double angle = obj.transform.angle*3.14/180;
+    if(angle == 0) angle= 0.01;
+    int relative_x = std::roundf((x-obj.transform.x-obj.transform.w/2) * std::cosf(angle) + (y-obj.transform.y-obj.transform.h/2) * std::sinf(angle));
+    int relative_y = std::roundf((x-obj.transform.x-obj.transform.w/2) * std::sinf(angle) - (y-obj.transform.y-obj.transform.h/2) * std::cosf(angle));
+    std::cout << relative_x << " ; " << relative_y << "\n";
+    relative_x+=obj.transform.w/2;
+    relative_y+=obj.transform.h/2;
+    int indx = relative_y*obj.transform.w + relative_x;
+    relative_x+=obj.transform.x;
+    relative_y+=obj.transform.y;
+    if(!onRect({obj.transform.x, obj.transform.y, obj.transform.x+obj.transform.w, obj.transform.y+obj.transform.h}, relative_x, relative_y)) return false;
     if(std::bitset<8>(obj.alphas[indx/8]).to_string()[indx%8] == '1') return true;
     return false;
 }
@@ -479,12 +483,14 @@ void moveSprites(){
     SDL_GetMouseState(&c_x, &c_y);
 
     for(int i = sprites.size()-1; i>=0; i--){
-        if(isOnTransparentPoint(sprites[i]) && evt.type == SDL_MOUSEBUTTONDOWN && evt.button.button == SDL_BUTTON_LEFT){
-            prev_x = c_x;
-            prev_y = c_y;
-            onButton = true;
-            index = i;
-            break;
+        if(evt.type == SDL_MOUSEBUTTONDOWN && evt.button.button == SDL_BUTTON_LEFT){
+            if(isOnTransparentPoint(sprites[i])){
+                prev_x = c_x;
+                prev_y = c_y;
+                onButton = true;
+                index = i;
+                break;
+            }
         }
         if(evt.type == SDL_MOUSEBUTTONUP && evt.button.button == SDL_BUTTON_LEFT){
             onButton = false;            
