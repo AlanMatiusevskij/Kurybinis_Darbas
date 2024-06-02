@@ -75,6 +75,52 @@ int stringToInt(std::string string);
 std::string doubleToString(double in, int precision);
 double stringToDouble(std::string in);
 
+class surfaceManipulation{
+public:
+    struct pixel{
+        int x;
+        int y;
+    };
+    struct color{
+        Uint8 r;
+        Uint8 g;
+        Uint8 b;
+        Uint8 a;
+    };
+    /** 
+     * Prepares surface for a high batch of changes.
+     * Format for RGBA surface: `SDL_PIXELFORMAT_RGBA32`
+    */
+    void createSurface(int width, int height, int depth, SDL_PixelFormatEnum format);
+    /**
+     * Creates a texture and deletes the surface.
+    */
+    SDL_Texture* createTextureAndDeleteSurface(SDL_Renderer *renderer);
+    /**
+     * Draws to a specifc pixel provided colors.
+    */
+    void drawToSurface(pixel coords, color RGBA);
+private:
+    SDL_Surface* surface;
+    Uint8 *data;
+};
+
+void surfaceManipulation::createSurface(int width, int height, int depth, SDL_PixelFormatEnum format){
+    surface = SDL_CreateRGBSurfaceWithFormat(0, width, height, depth, format);
+    SDL_LockSurface(surface);
+}
+void surfaceManipulation::drawToSurface(pixel coords, color RGBA){
+    data = (Uint8*)surface->pixels + coords.y*surface->pitch + coords.x * surface->format->BytesPerPixel;
+    *((Uint32*)data) = (Uint32)(RGBA.r << 0 | RGBA.g << 8 | RGBA.b << 16 | RGBA.a << 24);
+}
+SDL_Texture* surfaceManipulation::createTextureAndDeleteSurface(SDL_Renderer *renderer){
+    SDL_Texture* _return;
+    SDL_UnlockSurface(surface);
+    _return = SDL_CreateTextureFromSurface(renderer, surface);
+    SDL_FreeSurface(surface);
+    return _return;
+}
+
 class UI{
 public:
     //UI
@@ -142,7 +188,7 @@ int main(int argc, char *argv[]){
         inspector({WIDTH-WIDTH/5, 30, WIDTH/5 - 10, HEIGHT - 60}, 18);
 
         moveSprites();
-        renderSprites(true);
+        renderSprites(false);
 
         if(evt.type == SDL_QUIT)
             break;
@@ -161,11 +207,20 @@ void UI::button(std::string label, SDL_Rect buttonbox, int fontSize, void(*onCli
     renderText(label, buttonbox, fontSize, false);
 }
 
+std::vector<std::string> previous_files{};
+void displayDirectory(){
+
+}
+
 void browseDirectory(std::string &cd, SDL_Rect box, int fontSize){
     //Get current files in the directory.
     std::vector<std::string> files;
     for(const auto &entry : std::filesystem::directory_iterator(cd)){
         files.push_back(entry.path().generic_string());
+    }
+    if(previous_files == files){
+        displayDirectory();
+        return;
     }
 
     //Draw boxes
@@ -240,13 +295,11 @@ void loadBMP(std::string path){
     sprites.push_back({path, {WIDTH/2-surf->w/2, HEIGHT/2 - surf->h/2, surf->w, surf->h}, std::vector<int8_t>(std::ceil(float(surf->w*surf->h)/8)), SDL_CreateTextureFromSurface(rend, surf)});
     
     //Surface for creating transparency mask.
-    SDL_Surface *transpMask = SDL_CreateRGBSurfaceWithFormat(0, surf->w, surf->h, 8*4, SDL_PixelFormatEnum::SDL_PIXELFORMAT_RGBA32);
-    SDL_LockSurface(transpMask);
+    surfaceManipulation transpMask;
+    transpMask.createSurface(surf->w, surf->h, 32, SDL_PIXELFORMAT_RGBA32);
 
-    //Save all 'intangible' points
-    //by filling a vector with 11111111's, indicating non_complete_transparency.
+    //Save all 'intangible' points by filling a vector with 11111111's, indicating non_complete_transparency.
     std::fill(sprites[sprites.size()-1].alphas.begin(), sprites[sprites.size()-1].alphas.end(), 255);
-
 
     //And finding all points where the image is completely transparent and change vector[byte][bit] value to 0, indicating complete_transparency.
     SDL_LockSurface(surf);
@@ -256,28 +309,22 @@ void loadBMP(std::string path){
             Uint32 _colorValues = *(Uint32*)((Uint8*)((Uint8*)surf->pixels + _y*surf->pitch + _x*surf->format->BytesPerPixel));
             SDL_GetRGBA(_colorValues, surf->format, (Uint8*)red, (Uint8*)green, (Uint8*)blue, (Uint8*)alfa);
 
-            Uint8 *pixel = (Uint8*)transpMask->pixels;
-            pixel+=_y*transpMask->pitch+_x*transpMask->format->BytesPerPixel;
-
             if(*alfa == 0){
                 int byteNumb = (_y*surf->w + _x)/8;
                 int bitNumb = (_y*surf->w + _x)%8;
                 std::string binary = std::bitset<8>(sprites[sprites.size()-1].alphas[byteNumb]).to_string();
                 binary[bitNumb] = '0';
                 sprites[sprites.size()-1].alphas[byteNumb] = (int8_t)std::bitset<8>(binary).to_ulong();
-                //                                  R                G                B                  A
-                *((Uint32*)pixel) = (Uint32)((Uint8)255 << 0 | (Uint8)0 << 8 | (Uint8)0 << 16 | (Uint8)100 << 24);
+                transpMask.drawToSurface({_x, _y}, {255, 0, 0, 100});
             }
             else
-                *((Uint32*)pixel) = (Uint32)((Uint8)0 << 0 | (Uint8)255 << 8 | (Uint8)0 << 16 | (Uint8)100 << 24);
+                transpMask.drawToSurface({_x, _y}, {0, 255, 0, 100});
         }
-    SDL_UnlockSurface(transpMask);
-    sprites[sprites.size()-1].transparencyMask = SDL_CreateTextureFromSurface(rend, transpMask);
+    sprites[sprites.size()-1].transparencyMask = transpMask.createTextureAndDeleteSurface(rend);
 
     //Clean up
     delete red, green, blue, alfa;
     SDL_UnlockSurface(surf);
-    SDL_FreeSurface(transpMask);
     SDL_FreeSurface(surf);
 }
 

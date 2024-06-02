@@ -6,6 +6,6 @@ def chatgpt():
 
 #uzklausa = pyclink.receiveInput()
 uzklausa = "labas chatgpt"
-atsakymas = chatgpt() 
+atsakymas = chatgpt()
 
 pyclink.send(pyclink.TYPES.CHAR_P, atsakymas)
