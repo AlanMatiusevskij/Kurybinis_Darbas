@@ -121,7 +121,7 @@ SDL_Texture* surfaceManipulation::createTextureAndDeleteSurface(SDL_Renderer *re
     return _return;
 }
 
-class UI{
+class UI{//
 public:
     //UI
     void renderText(std::string sentence, SDL_Rect textBox, int fontSize, bool newLines);
