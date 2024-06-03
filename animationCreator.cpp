@@ -124,6 +124,31 @@ SDL_Texture* surfaceManipulation::createTextureAndDeleteSurface(SDL_Renderer *re
     return _return;
 }
 
+
+class UI2{
+public:
+    //UI
+    SDL_Surface* renderText(std::string sentence, SDL_Rect textBox, int fontsize, bool newLines);
+    FT_FaceRec_* useFont(std::string path, int fontSize);
+    
+    //Last renderText() information.
+    struct{
+        //Whole surface:
+        int w, h;
+        int fontSize;
+        //total width at the end of each symbol.
+        std::vector<int> widthSymEnd; 
+    }textInfo;
+private:
+    struct loadedFaces_struct{
+        std::string path;
+        int fontSize;
+        FT_FaceRec_ *face;
+        FT_Library ft;
+    };
+    std::vector<loadedFaces_struct> loadedFaces;
+};
+
 class UI{
 public:
     //UI
@@ -815,6 +840,29 @@ void timeline(SDL_Rect box){
     SDL_RenderCopy(rend, timeLineBackground.texture, NULL, &box);
 }
 
-SDL_Surface* renderTextv2(){
-    
+SDL_Surface* UI2::renderText(std::string sentence, SDL_Rect textBox, int fontsize, bool newLines){
+    //needed variables
+    textInfo.widthSymEnd.clear();
+    std::vector<std::string> words;
+    std::string ind_word{""};
 }
+
+FT_FaceRec_* UI2::useFont(std::string path, int fontSize){
+    //Check if a specific sized font is already loaded.
+    for(loadedFaces_struct &obj : loadedFaces)
+        if(obj.path == path && obj.fontSize == fontSize) return obj.face;
+    
+    //Load a font of specific size.
+    loadedFaces.push_back({path, fontSize});
+    int i = loadedFaces.size();
+
+    FT_Open_Args args;
+    args.flags = FT_OPEN_PATHNAME;
+    args.pathname = path.data();
+
+    if(FT_Open_Face(loadedFaces[i].ft, &args, 0, &loadedFaces[i].face)) std::cout << "Failed to load font ('" << path << "') of size " << fontSize << ". Tried index: " << i <<"\n";
+    loadedFaces[i].face->glyph->format = FT_GLYPH_FORMAT_BITMAP;
+    FT_Set_Pixel_Sizes(loadedFaces[i].face, fontSize, fontSize);
+
+    return loadedFaces[i].face;
+}  
