@@ -128,18 +128,30 @@ SDL_Texture* surfaceManipulation::createTextureAndDeleteSurface(SDL_Renderer *re
 class UI2{
 public:
     //UI
-    SDL_Surface* renderText(std::string sentence, SDL_Rect textBox, int fontsize, bool newLines);
+    SDL_Texture* renderText(std::string sentence, SDL_Rect textBox, int fontsize, bool newLines);
     FT_FaceRec_* useFont(std::string path, int fontSize);
-    
+
+    static void updateLife();
+    static SDL_Texture* findExistingText(std::string &sentence, SDL_Rect &textBox);
+
     //Last renderText() information.
     struct{
         //Whole surface:
         int w, h;
         int fontSize;
         //total width at the end of each symbol.
-        std::vector<int> widthSymEnd; 
+        std::vector<SDL_Point> widthSymEnd; 
     }textInfo;
+
 private:
+    struct renderedTexts_struct{
+        SDL_Texture* texture;
+        std::string sentence = "";
+        int lastAccessed = 0; //-frames/updates ago.
+        SDL_Rect dimensions;
+    };
+    static std::vector<renderedTexts_struct> renderedTexts;
+
     struct loadedFaces_struct{
         std::string path;
         int fontSize;
@@ -214,6 +226,7 @@ int main(int argc, char *argv[]){
     while(true){
         SDL_PollEvent(&evt);
         if(evt.type == SDL_QUIT) break;
+        UI2::updateLife();
 
         SDL_SetRenderDrawColor(rend, bg.r,bg.g,bg.b,bg.a);
         SDL_RenderClear(rend);
@@ -233,6 +246,18 @@ int main(int argc, char *argv[]){
     FT_Done_FreeType(ft);
     SDL_Quit();
     return 0;
+}
+
+void UI2::updateLife(){
+    for(int i = 0; i < renderedTexts.size(); i++){
+        renderedTexts[i].lastAccessed++;
+        if(renderedTexts[i].lastAccessed >= 2){
+            SDL_DestroyTexture(renderedTexts[i].texture);
+            renderedTexts.erase(renderedTexts.begin() + i);
+        }
+    }
+    renderedTexts.shrink_to_fit();
+    return;
 }
 
 void UI::buttonDrawn(std::string label, SDL_Rect buttonbox, int fontSize, void(*onClick)(void*), void* param){
@@ -466,7 +491,7 @@ void UI::renderText(std::string sentence, SDL_Rect textBox, int fontSize, bool n
             ftbitmap = face->glyph->bitmap;
 
             //Create a surface and apply palette's colros
-            SDL_Surface* glyph = SDL_CreateRGBSurfaceFrom(ftbitmap.buffer, ftbitmap.width, ftbitmap.rows, 8, ftbitmap.pitch, 0, 0, 0, 0xFF);
+            SDL_Surface* glyph = SDL_CreateRGBSurfaceFrom(ftbitmap.buffer, ftbitmap.width, ftbitmap.rows, 32, ftbitmap.pitch, 0, 0, 0, 0xFF);
             SDL_SetPaletteColors(glyph->format->palette, colors, 0, 256);
             SDL_SetSurfaceBlendMode(glyph, SDL_BlendMode::SDL_BLENDMODE_ADD);    
 
@@ -840,11 +865,81 @@ void timeline(SDL_Rect box){
     SDL_RenderCopy(rend, timeLineBackground.texture, NULL, &box);
 }
 
-SDL_Surface* UI2::renderText(std::string sentence, SDL_Rect textBox, int fontsize, bool newLines){
+SDL_Texture* UI2::renderText(std::string sentence, SDL_Rect textBox, int fontsize, bool newLines){
+    //Return an existing surface, if there is one.
+    SDL_Texture* textr = findExistingText(sentence, textBox);
+    if(textr != nullptr) return textr;
+    SDL_DestroyTexture(textr);
+
     //needed variables
     textInfo.widthSymEnd.clear();
     std::vector<std::string> words;
     std::string ind_word{""};
+
+    FT_FaceRec_* FACE = useFont("./assets/fonts/OpenSans-Regular.ttf", fontsize);
+
+    //Save each word and whitespaces in a vector
+    for(char symb : sentence){
+        if(symb == ' '){
+            words.push_back(ind_word);
+            ind_word = "";
+        }
+        else ind_word += symb;
+    }
+    //save the last one.
+    words.push_back(ind_word);
+
+    //Create a surface where the sentence will be stored.
+    surfaceManipulation manip;
+    manip.createSurface(textBox.w, textBox.h, 32, SDL_PIXELFORMAT_RGBA32);
+
+    //Get all information about the words we want to display.
+    int totalWidth = 1;
+    int totalHeight = 1;
+    int belowBaseLine = 0;
+    for(std::string word : words){
+        for(char symb : word){
+            FT_Load_Char(FACE, symb, FT_LOAD_RENDER);
+            belowBaseLine = (FACE->glyph->metrics.height - FACE->glyph->metrics.horiBearingY)/55;
+            SDL_Surface *glyph;
+
+            if(newLines && totalWidth + FACE->glyph->metrics.width >=textBox.w-1){
+                //Take into consideration '-' symbol.
+                FT_Load_Char(FACE, '-', FT_LOAD_RENDER);
+                belowBaseLine = (FACE->glyph->metrics.height - FACE->glyph->metrics.horiBearingY)/55;
+                //render here
+                glyph = SDL_CreateRGBSurfaceFrom(FACE->glyph->bitmap.buffer, FACE->glyph->bitmap.width, FACE->glyph->bitmap.rows, 8, FACE->glyph->bitmap.pitch, 0, 0, 0, 0xFF);
+
+                FT_Load_Char(FACE, symb, FT_LOAD_RENDER);
+                belowBaseLine = (FACE->glyph->metrics.height - FACE->glyph->metrics.horiBearingY)/55;
+
+                totalHeight += 1;
+                totalWidth = 1;
+            }
+           // render here
+
+            //Update some info.
+            totalWidth+=FACE->glyph->metrics.width;
+            textInfo.widthSymEnd.push_back({totalWidth, totalHeight});
+        }
+        totalWidth += fontsize/4;
+    }
+    return nullptr;
+}
+
+bool checkIfRectsEqual(SDL_Rect rect1, SDL_Rect rect2){
+    if(rect1.x == rect2.x && rect1.w == rect2.w && rect1.h == rect2.h && rect1.y == rect2.y) return true;
+    return false;
+}
+
+SDL_Texture* UI2::findExistingText(std::string &sentence, SDL_Rect &textBox){
+    for(renderedTexts_struct &obj : renderedTexts){
+        if(obj.sentence == sentence && checkIfRectsEqual(textBox, obj.dimensions)){
+            obj.lastAccessed = 0;
+            return obj.texture;
+        }
+    }
+    return nullptr;
 }
 
 FT_FaceRec_* UI2::useFont(std::string path, int fontSize){
