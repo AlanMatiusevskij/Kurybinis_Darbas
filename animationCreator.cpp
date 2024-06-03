@@ -17,6 +17,8 @@ int WIDTH = 1600;
 int HEIGHT = 800;
 int UPS = 60;
 
+SDL_Color bg = {30,30,30,255};
+
 FT_Library ft;
 SDL_Color colors[256];
 
@@ -162,15 +164,15 @@ struct save_info{
     int dividend;
 };
 
-void timeline();
+void timeline(SDL_Rect box);
 void clearFrames();
 void saveFrame();
 
 void saveToFile();
 
-void pushToFront(void* index);
-void pushToBack(void* index);
-void unload(void* index);
+void pushToFront(void* data);
+void pushToBack(void* data);
+void unload(void* data);
 
 int main(int argc, char *argv[]){
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_TIMER);
@@ -188,7 +190,7 @@ int main(int argc, char *argv[]){
         SDL_PollEvent(&evt);
         if(evt.type == SDL_QUIT) break;
 
-        SDL_SetRenderDrawColor(rend, 30,30,30,255);
+        SDL_SetRenderDrawColor(rend, bg.r,bg.g,bg.b,bg.a);
         SDL_RenderClear(rend);
         SDL_SetRenderDrawColor(rend, 255,255,255,255);
 
@@ -196,6 +198,8 @@ int main(int argc, char *argv[]){
         inspector({WIDTH-WIDTH/5, 30, WIDTH/5 - 10, HEIGHT - 60}, 18);
         moveSprites();
         renderSprites(false);
+
+        timeline({10, HEIGHT-100, WIDTH-WIDTH/5-10, 70});
         
         SDL_RenderPresent(rend);
         SDL_Delay(1000/float(UPS));
@@ -473,17 +477,19 @@ bool isOnTransparentPoint(sprite_struct &obj){
     int x, y;
     SDL_GetMouseState(&x, &y);
     double angle = (360-obj.transform.angle)*3.14/180;
-    if(angle == 0) angle = 0.01;
-    int relative_x = std::roundf((x-obj.transform.x-obj.transform.w/2) * std::cosf(angle) - (y-obj.transform.y-obj.transform.h/2) * std::sinf(angle));
-    int relative_y = std::roundf((x-obj.transform.x-obj.transform.w/2) * std::sinf(angle) + (y-obj.transform.y-obj.transform.h/2) * std::cosf(angle));
+    int w = std::roundf(obj.transform.w * obj.transform.scale_x);
+    int h = std::roundf(obj.transform.h * obj.transform.scale_y);
+
+    int relative_x = std::roundf((x-obj.transform.x-w/2) * std::cosf(angle) - (y-obj.transform.y-h/2) * std::sinf(angle));
+    int relative_y = std::roundf((x-obj.transform.x-w/2) * std::sinf(angle) + (y-obj.transform.y-h/2) * std::cosf(angle));
     
-    relative_x+=obj.transform.w/2;
-    relative_y+=obj.transform.h/2;
-    int indx = relative_y*obj.transform.w + relative_x;
+    relative_x+=w/2;
+    relative_y+=h/2;
+    int indx = ((double)relative_y/obj.transform.scale_y)*obj.transform.w + (double)relative_x/obj.transform.scale_x;
     relative_x+=obj.transform.x;
     relative_y+=obj.transform.y;
 
-    if(!onRect({obj.transform.x, obj.transform.y, obj.transform.x+obj.transform.w, obj.transform.y+obj.transform.h}, relative_x, relative_y)) return false;
+    if(!onRect({obj.transform.x, obj.transform.y, w, h}, relative_x, relative_y)) return false;
     if(std::bitset<8>(obj.alphas[indx/8]).to_string()[indx%8] == '1') return true;
     return false;
 }
@@ -541,9 +547,8 @@ void inspector(SDL_Rect box, int fontSize){
 
     //Get all loaded paths into a string.
     std::vector<std::string> loaded;
-    for(sprite_struct &obj : sprites)
-        loaded.push_back(obj.path);
-
+    for(int i = sprites.size()-1; i >= 0; i--)
+        loaded.push_back(sprites[i].path);
     //Create a scroll box:
     if(loaded.size() == 0){
         inspector_class.renderText("Active sprites.", {box.x + 2, box.y + 5, box.w - 2, fontSize+4}, fontSize+4, false);
@@ -578,9 +583,9 @@ void inspector(SDL_Rect box, int fontSize){
         specStat3.inspectorSpecificValue(sprites[selectedIndex].transform.angle, "Angle: ", {box.x + 30, detailsAreaY+2*fontSize+6, 170, fontSize}, fontSize);
 
         //Buttons "push to front", "push to back", "unload".
-        inspector_class.buttonDrawn("Up", {box.x + 170, detailsAreaY, 25, fontSize}, 14, &pushToFront, (void*)selectedIndex);
-        inspector_class.buttonDrawn("Down", {box.x + 195, detailsAreaY, 50, fontSize}, 14, &pushToBack, (void*)selectedIndex);
-        inspector_class.buttonDrawn("Del", {box.x + 245, detailsAreaY, 30, fontSize}, 14, &unload, (void*)selectedIndex);
+        inspector_class.buttonDrawn("Up", {box.x + 170, detailsAreaY, 25, fontSize}, 14, &pushToFront, &selectedIndex);
+        inspector_class.buttonDrawn("Down", {box.x + 195, detailsAreaY, 50, fontSize}, 14, &pushToBack, &selectedIndex);
+        inspector_class.buttonDrawn("Del", {box.x + 245, detailsAreaY, 30, fontSize}, 14, &unload, &selectedIndex);
     }
 
     // * Section "List of sliders"
@@ -588,14 +593,27 @@ void inspector(SDL_Rect box, int fontSize){
     inspector_class.renderText("Tracked angle sliders: ", {box.x + 15, detailsAreaY, box.x-30, fontSize}, fontSize, false);
 }
 
-void pushToFront(void* index){
-
+void pushToFront(void* data){
+    int index = *static_cast<int*>(data);
+    if(index + 1 == sprites.size()) return; 
+    if(index + 2 == sprites.size()) sprites.resize(index+2);
+    sprites.insert(sprites.begin() + index + 2, sprites[index]);
+    sprites.erase(sprites.begin()+index);
+    sprites.shrink_to_fit();
 }
-void pushToBack(void* index){
-
+void pushToBack(void* data){
+    int index = *static_cast<int*>(data);
+    if(index == 0) return;
+    sprites.insert(sprites.begin() + index-1, sprites[index]);
+    sprites.erase(sprites.begin() + index + 1);
 }
-void unload(void* index){
-
+void unload(void* data){
+    int index = *static_cast<int*>(data);
+    SDL_DestroyTexture(sprites[index].transparencyMask);
+    SDL_DestroyTexture(sprites[index].texture);
+    sprites.erase(sprites.begin() + index);
+    sprites.shrink_to_fit();
+    selectedSprite = "";
 }
 
 void UI::inspectorSpecificValue(double &value, std::string name, SDL_Rect box, int fontSize){
@@ -761,4 +779,42 @@ std::string doubleToString(double in, int precision){
     _return += intToString(int(fraction*std::pow(10, precision)));
 
     return _return;
+}
+
+//I'm testing whether this approach is better, if it is, apply everywhere.
+surfaceManipulation timeLineSurf;
+struct visualData 
+{
+    bool wasUpdated = true;
+    SDL_Texture *texture;
+};
+
+visualData timeLineBackground;
+void timeline(SDL_Rect box){
+    if(timeLineBackground.wasUpdated){
+        surfaceManipulation::color white = {255,255,255,255};
+
+        SDL_DestroyTexture(timeLineBackground.texture);
+        timeLineSurf.createSurface(box.w, box.h, 32, SDL_PIXELFORMAT_RGBA32);
+        for(int x = 0; x < box.w; x++)
+            for(int y = 0; y < box.h; y++)
+                timeLineSurf.drawToSurface({x, y}, {bg.r, bg.g, bg.b, bg.a});
+        
+        for(int x = 0; x< box.w; x++){
+            timeLineSurf.drawToSurface({x, 0}, white);
+            timeLineSurf.drawToSurface({x, box.h-1}, white);
+        }
+        for(int y = 0; y < box.h; y++){
+            timeLineSurf.drawToSurface({0, y}, white);
+            timeLineSurf.drawToSurface({box.w-1, y}, white);
+        }
+
+        timeLineBackground.texture = timeLineSurf.createTextureAndDeleteSurface(rend);
+        timeLineBackground.wasUpdated = false;
+    }
+    SDL_RenderCopy(rend, timeLineBackground.texture, NULL, &box);
+}
+
+SDL_Surface* renderTextv2(){
+    
 }
