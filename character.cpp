@@ -144,24 +144,6 @@ void petto::animate(){
 
     return;
 }
-int frm = 0;
-bool petto::waitForBaseAngle(){
-
-    //true when the base angle reached
-    return;
-}
-
-void petto::animate_STOVINTIS(){
-    //Stovincio pozicija, rotations, idle animation.
-    
-    return;
-}
-
-void petto::animate_EINANTIS(){
-
-
-    return;
-}
 
 void petto::createCharacter(){
     sprites.resize(CATEGORY.NUMB);

@@ -63,7 +63,7 @@ void loadFont(int fontSize);
 
 void selectDirectory(std::string label);
 void browseDirectory(std::string &cd, SDL_Rect box, int fontSize);
-void cdBack();  
+void cdBack(void* in);  
 
 std::string selectedSprite = "";
 void inspector(SDL_Rect box, int fontSize);
@@ -127,7 +127,8 @@ public:
     //UI
     void renderText(std::string sentence, SDL_Rect textBox, int fontSize, bool newLines);
     void slider(std::string label, int fontSize, SDL_Rect sliderBox, int &value, int minValue, int maxValue);
-    void button(std::string label, SDL_Rect buttonbox, int fontSize, void(*onClick)());
+    void button(std::string label, SDL_Rect buttonbox, int fontSize, void(*onClick)(void*), void* param);
+    void buttonDrawn(std::string label, SDL_Rect buttonbox, int fontSize, void(*onClick)(void*), void* param);
     void scrollBox(GUItypes type, SDL_Rect box, std::vector<std::string> &entries, int fontSize, void (*onClick)(std::string));
     void textInput(std::string &in, bool onlyNUMB, SDL_Rect box, int fontsize);
     
@@ -167,6 +168,10 @@ void saveFrame();
 
 void saveToFile();
 
+void pushToFront(void* index);
+void pushToBack(void* index);
+void unload(void* index);
+
 int main(int argc, char *argv[]){
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_TIMER);
     FT_Init_FreeType(&ft);
@@ -181,6 +186,8 @@ int main(int argc, char *argv[]){
 
     while(true){
         SDL_PollEvent(&evt);
+        if(evt.type == SDL_QUIT) break;
+
         SDL_SetRenderDrawColor(rend, 30,30,30,255);
         SDL_RenderClear(rend);
         SDL_SetRenderDrawColor(rend, 255,255,255,255);
@@ -189,9 +196,7 @@ int main(int argc, char *argv[]){
         inspector({WIDTH-WIDTH/5, 30, WIDTH/5 - 10, HEIGHT - 60}, 18);
         moveSprites();
         renderSprites(false);
-    
-        if(evt.type == SDL_QUIT)
-            break;
+        
         SDL_RenderPresent(rend);
         SDL_Delay(1000/float(UPS));
     }
@@ -201,9 +206,16 @@ int main(int argc, char *argv[]){
     return 0;
 }
 
-void UI::button(std::string label, SDL_Rect buttonbox, int fontSize, void(*onClick)()){
+void UI::buttonDrawn(std::string label, SDL_Rect buttonbox, int fontSize, void(*onClick)(void*), void* param){
+    button(label, buttonbox, fontSize, onClick, param);
+    int width = symEndPos[symEndPos.size()-1];
+    buttonbox = {buttonbox.x-2, buttonbox.y, width+4, fontSize+3};
+    SDL_SetRenderDrawColor(rend, 255,255,255,255);
+    SDL_RenderDrawRect(rend, &buttonbox);
+}
+void UI::button(std::string label, SDL_Rect buttonbox, int fontSize, void(*onClick)(void*), void* param){
     if(onRect(buttonbox) && evt.type == SDL_MOUSEBUTTONDOWN && evt.button.button == SDL_BUTTON_LEFT)
-        onClick();
+        onClick(param);
     renderText(label, buttonbox, fontSize, false);
 }
 
@@ -219,7 +231,7 @@ void browseDirectory(std::string &cd, SDL_Rect box, int fontSize){
     SDL_RenderDrawLine(rend, box.x, box.y + fontSize + 2, box.x + box.w - 1, box.y + fontSize + 2);
 
     //cdBack
-    explorer_class.button("...", {box.x + box.w - fontSize, box.y, fontSize, fontSize}, fontSize, &cdBack);
+    explorer_class.button("...", {box.x + box.w - fontSize, box.y, fontSize, fontSize}, fontSize, &cdBack, nullptr);
 
     //Print current directory
     explorer_class.renderText(cd, {box.x + 1, box.y + 1, box.w - 1, fontSize}, fontSize, false);
@@ -227,7 +239,7 @@ void browseDirectory(std::string &cd, SDL_Rect box, int fontSize){
     explorer_class.scrollBox(GUItypes::BUTTON, {box.x, box.y + fontSize + 2, box.w, box.h -fontSize-2}, files, fontSize, &selectDirectory);
 }
 
-void cdBack(){
+void cdBack(void* in){
     if(CD.size() > 2 && CD[CD.size()-1] == '/') CD.pop_back();
     for(int i = CD.size()-1; i >= 1; i--){
         if(CD[i] != '/') CD.pop_back();
@@ -460,16 +472,17 @@ void UI::renderText(std::string sentence, SDL_Rect textBox, int fontSize, bool n
 bool isOnTransparentPoint(sprite_struct &obj){
     int x, y;
     SDL_GetMouseState(&x, &y);
-    double angle = obj.transform.angle*3.14/180;
-    if(angle == 0) angle= 0.01;
-    int relative_x = std::roundf((x-obj.transform.x-obj.transform.w/2) * std::cosf(angle) + (y-obj.transform.y-obj.transform.h/2) * std::sinf(angle));
-    int relative_y = std::roundf((x-obj.transform.x-obj.transform.w/2) * std::sinf(angle) - (y-obj.transform.y-obj.transform.h/2) * std::cosf(angle));
-    std::cout << relative_x << " ; " << relative_y << "\n";
+    double angle = (360-obj.transform.angle)*3.14/180;
+    if(angle == 0) angle = 0.01;
+    int relative_x = std::roundf((x-obj.transform.x-obj.transform.w/2) * std::cosf(angle) - (y-obj.transform.y-obj.transform.h/2) * std::sinf(angle));
+    int relative_y = std::roundf((x-obj.transform.x-obj.transform.w/2) * std::sinf(angle) + (y-obj.transform.y-obj.transform.h/2) * std::cosf(angle));
+    
     relative_x+=obj.transform.w/2;
     relative_y+=obj.transform.h/2;
     int indx = relative_y*obj.transform.w + relative_x;
     relative_x+=obj.transform.x;
     relative_y+=obj.transform.y;
+
     if(!onRect({obj.transform.x, obj.transform.y, obj.transform.x+obj.transform.w, obj.transform.y+obj.transform.h}, relative_x, relative_y)) return false;
     if(std::bitset<8>(obj.alphas[indx/8]).to_string()[indx%8] == '1') return true;
     return false;
@@ -560,9 +573,14 @@ void inspector(SDL_Rect box, int fontSize){
         for(int i = 0; i < sprites.size(); i++) if(sprites[i].path == selectedSprite) selectedIndex = i;
         
         //Convert value to string, show it as an editable text box, translate the value, which can be modified, back to an int.
-        specStat1.inspectorSpecificValue(sprites[selectedIndex].transform.scale_x, "Scale X: ", {box.x + 30, detailsAreaY, box.x-60, fontSize}, fontSize);
-        specStat2.inspectorSpecificValue(sprites[selectedIndex].transform.scale_y, "Scale Y: ", {box.x + 30, detailsAreaY+fontSize+3, box.x-60, fontSize}, fontSize);
-        specStat3.inspectorSpecificValue(sprites[selectedIndex].transform.angle, "Angle: ", {box.x + 30, detailsAreaY+2*fontSize+6, box.x-60, fontSize}, fontSize);
+        specStat1.inspectorSpecificValue(sprites[selectedIndex].transform.scale_x, "Scale X: ", {box.x + 30, detailsAreaY, 170, fontSize}, fontSize);
+        specStat2.inspectorSpecificValue(sprites[selectedIndex].transform.scale_y, "Scale Y: ", {box.x + 30, detailsAreaY+fontSize+3, 170, fontSize}, fontSize);
+        specStat3.inspectorSpecificValue(sprites[selectedIndex].transform.angle, "Angle: ", {box.x + 30, detailsAreaY+2*fontSize+6, 170, fontSize}, fontSize);
+
+        //Buttons "push to front", "push to back", "unload".
+        inspector_class.buttonDrawn("Up", {box.x + 170, detailsAreaY, 25, fontSize}, 14, &pushToFront, (void*)selectedIndex);
+        inspector_class.buttonDrawn("Down", {box.x + 195, detailsAreaY, 50, fontSize}, 14, &pushToBack, (void*)selectedIndex);
+        inspector_class.buttonDrawn("Del", {box.x + 245, detailsAreaY, 30, fontSize}, 14, &unload, (void*)selectedIndex);
     }
 
     // * Section "List of sliders"
@@ -570,10 +588,20 @@ void inspector(SDL_Rect box, int fontSize){
     inspector_class.renderText("Tracked angle sliders: ", {box.x + 15, detailsAreaY, box.x-30, fontSize}, fontSize, false);
 }
 
+void pushToFront(void* index){
+
+}
+void pushToBack(void* index){
+
+}
+void unload(void* index){
+
+}
+
 void UI::inspectorSpecificValue(double &value, std::string name, SDL_Rect box, int fontSize){
     std::string tmp = doubleToString(value, 2);
-    renderText(name, {box.x, box.y, box.w , fontSize}, fontSize, false);
-    textInput(tmp, true, {box.x+symEndPos[symEndPos.size()-1] + fontSize/5, box.y, box.w - (int)(name.size()+1)*fontSize, fontSize}, fontSize);
+    renderText(name, box, fontSize, false);
+    textInput(tmp, true, {box.x+symEndPos[symEndPos.size()-1] + fontSize/5, box.y, box.w, fontSize}, fontSize);
     value = stringToDouble(tmp);
 }
 
