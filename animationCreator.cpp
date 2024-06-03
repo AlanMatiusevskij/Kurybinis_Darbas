@@ -232,7 +232,7 @@ int main(int argc, char *argv[]){
     SDL_SetRenderDrawBlendMode(rend, SDL_BlendMode::SDL_BLENDMODE_BLEND);
 
     for(int i = 0; i < 256; i++)
-        colors[i].r = colors[i].g = colors[i].b = colors[i].a= i;
+        colors[i].r = colors[i].g = colors[i].b = colors[i].a = i;
 
 
     while(true){
@@ -881,9 +881,9 @@ void timeline(SDL_Rect box){
 
 SDL_Texture* UI2::renderText(std::string sentence, SDL_Rect textBox, int fontsize, bool newLines){
     //Return an existing surface, if there is one.
-    SDL_Texture* textr = findExistingText(sentence, textBox);
-    if(textr != nullptr) return textr;
-    SDL_DestroyTexture(textr);
+    //SDL_Texture* textr = findExistingText(sentence, textBox);
+    //if(textr != nullptr) return textr;
+    //SDL_DestroyTexture(textr);
 
     //needed variables
     textInfo.widthSymEnd.clear();
@@ -905,7 +905,6 @@ SDL_Texture* UI2::renderText(std::string sentence, SDL_Rect textBox, int fontsiz
 
     //Create a surface where the sentence will be stored.
     surfaceManipulation manip;
-    SDL_Color col;
     manip.createSurface(textBox.w, textBox.h, 32, SDL_PIXELFORMAT_RGBA32);
 
     //Get all information about the words we want to display.
@@ -922,15 +921,7 @@ SDL_Texture* UI2::renderText(std::string sentence, SDL_Rect textBox, int fontsiz
                 //Take into consideration '-' symbol.
                 FT_Load_Char(FACE, '-', FT_LOAD_RENDER);
                 belowBaseLine = (FACE->glyph->metrics.height - FACE->glyph->metrics.horiBearingY)/55;
-                
-                glyph = SDL_CreateRGBSurfaceFrom(FACE->glyph->bitmap.buffer, FACE->glyph->bitmap.width, FACE->glyph->bitmap.rows, 8, FACE->glyph->bitmap.pitch, 0, 0, 0, 0xFF);
-                for(int x = 0; x < FACE->glyph->bitmap.width; x++){
-                    for(int y = 0; y < FACE->glyph->bitmap.rows; y++){
-                        col = manip.getSurfaceColors({x,y}, glyph, false);
-                        manip.drawToSurface({x+totalWidth, y+totalHeight}, {col.r, col.g, col.b, col.a});
-                    }
-                }
-                SDL_FreeSurface(glyph);
+                //render here
 
                 FT_Load_Char(FACE, symb, FT_LOAD_RENDER);
                 belowBaseLine = (FACE->glyph->metrics.height - FACE->glyph->metrics.horiBearingY)/55;
@@ -938,18 +929,19 @@ SDL_Texture* UI2::renderText(std::string sentence, SDL_Rect textBox, int fontsiz
                 totalHeight += 1;
                 totalWidth = 1;
             }
+            
             glyph = SDL_CreateRGBSurfaceFrom(FACE->glyph->bitmap.buffer, FACE->glyph->bitmap.width, FACE->glyph->bitmap.rows, 8, FACE->glyph->bitmap.pitch, 0, 0, 0, 0xFF);
-            for(int x = 0; x < FACE->glyph->bitmap.width; x++){
-                for(int y = FACE->glyph->bitmap.rows; y < FACE->glyph->bitmap.rows; y--){
-                    col = manip.getSurfaceColors({x,y}, glyph, false);
-                    //cia aukstyn kojom jie!
-                    manip.drawToSurface({x+totalWidth, y+totalHeight}, {col.r, col.g, col.b, col.a});
-                }
-            }
+            SDL_SetPaletteColors(glyph->format->palette, colors, 0, 256);
+            SDL_SetSurfaceBlendMode(glyph, SDL_BlendMode::SDL_BLENDMODE_ADD); 
+            SDL_Surface *glyph2 = SDL_ConvertSurfaceFormat(glyph, SDL_PIXELFORMAT_RGBA32, 0);
+            SDL_Texture *tx = SDL_CreateTextureFromSurface(rend, glyph2);
+            SDL_Rect d = {100 + totalWidth, 300, glyph2->w, glyph2->h};
+            SDL_RenderCopy(rend, tx, NULL, &d);
             SDL_FreeSurface(glyph);
+            SDL_FreeSurface(glyph2);
 
             //Update some info.
-            totalWidth+=FACE->glyph->metrics.width;
+            totalWidth+=FACE->glyph->bitmap.width;
             textInfo.widthSymEnd.push_back({totalWidth, totalHeight});
         }
         totalWidth += fontsize/4;
