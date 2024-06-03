@@ -103,6 +103,11 @@ public:
      * Draws to a specifc pixel provided colors.
     */
     void drawToSurface(pixel coords, color RGBA);
+    /**
+     * Gets RGBA values from a specified surface's given pixel.
+    */
+    SDL_Color getSurfaceColors(pixel coords, SDL_Surface *surface, bool freeSurface);
+
 private:
     SDL_Surface* surface;
     Uint8 *data;
@@ -113,6 +118,7 @@ void surfaceManipulation::createSurface(int width, int height, int depth, SDL_Pi
     SDL_LockSurface(surface);
 }
 void surfaceManipulation::drawToSurface(pixel coords, color RGBA){
+    if(RGBA.a == 0) return;
     data = (Uint8*)surface->pixels + coords.y*surface->pitch + coords.x * surface->format->BytesPerPixel;
     *((Uint32*)data) = (Uint32)(RGBA.r << 0 | RGBA.g << 8 | RGBA.b << 16 | RGBA.a << 24);
 }
@@ -123,27 +129,16 @@ SDL_Texture* surfaceManipulation::createTextureAndDeleteSurface(SDL_Renderer *re
     SDL_FreeSurface(surface);
     return _return;
 }
-
+SDL_Color surfaceManipulation::getSurfaceColors(pixel coords, SDL_Surface *surface, bool freeSurface){
+    Uint8 red{}, green{}, blue{}, alfa{};
+    Uint32 values = *(Uint32*)((Uint8*)((Uint8*)surface->pixels + coords.y*surface->pitch + coords.x*surface->format->BytesPerPixel));
+    SDL_GetRGBA(values, surface->format, (Uint8*)(&red), (Uint8*)(&green), (Uint8*)(&blue), (Uint8*)(&alfa));
+    if(freeSurface) SDL_FreeSurface(surface);
+    return {red, green, blue, alfa};
+}
 
 class UI2{
 public:
-    //UI
-    SDL_Texture* renderText(std::string sentence, SDL_Rect textBox, int fontsize, bool newLines);
-    FT_FaceRec_* useFont(std::string path, int fontSize);
-
-    static void updateLife();
-    static SDL_Texture* findExistingText(std::string &sentence, SDL_Rect &textBox);
-
-    //Last renderText() information.
-    struct{
-        //Whole surface:
-        int w, h;
-        int fontSize;
-        //total width at the end of each symbol.
-        std::vector<SDL_Point> widthSymEnd; 
-    }textInfo;
-
-private:
     struct renderedTexts_struct{
         SDL_Texture* texture;
         std::string sentence = "";
@@ -152,6 +147,15 @@ private:
     };
     static std::vector<renderedTexts_struct> renderedTexts;
 
+    //Last renderText() information.
+    struct{
+        //Whole texture:
+        int w, h;
+        int fontSize;
+        //total width at the end of each symbol.
+        std::vector<SDL_Point> widthSymEnd; 
+    }textInfo;
+
     struct loadedFaces_struct{
         std::string path;
         int fontSize;
@@ -159,7 +163,15 @@ private:
         FT_Library ft;
     };
     std::vector<loadedFaces_struct> loadedFaces;
+
+    //UI
+    SDL_Texture* renderText(std::string sentence, SDL_Rect textBox, int fontsize, bool newLines);
+    FT_FaceRec_* useFont(std::string path, int fontSize);
+
+    static void updateLife();
+    static SDL_Texture* findExistingText(std::string &sentence, SDL_Rect &textBox);
 };
+std::vector<UI2::renderedTexts_struct> UI2::renderedTexts{};
 
 class UI{
 public:
@@ -231,7 +243,6 @@ int main(int argc, char *argv[]){
         SDL_SetRenderDrawColor(rend, bg.r,bg.g,bg.b,bg.a);
         SDL_RenderClear(rend);
         SDL_SetRenderDrawColor(rend, 255,255,255,255);
-
         browseDirectory(CD, {10, 10, 270, 200}, 18);
         inspector({WIDTH-WIDTH/5, 30, WIDTH/5 - 10, HEIGHT - 60}, 18);
         moveSprites();
@@ -289,7 +300,6 @@ void browseDirectory(std::string &cd, SDL_Rect box, int fontSize){
 
     //Print current directory
     explorer_class.renderText(cd, {box.x + 1, box.y + 1, box.w - 1, fontSize}, fontSize, false);
-
     explorer_class.scrollBox(GUItypes::BUTTON, {box.x, box.y + fontSize + 2, box.w, box.h -fontSize-2}, files, fontSize, &selectDirectory);
 }
 
@@ -491,7 +501,7 @@ void UI::renderText(std::string sentence, SDL_Rect textBox, int fontSize, bool n
             ftbitmap = face->glyph->bitmap;
 
             //Create a surface and apply palette's colros
-            SDL_Surface* glyph = SDL_CreateRGBSurfaceFrom(ftbitmap.buffer, ftbitmap.width, ftbitmap.rows, 32, ftbitmap.pitch, 0, 0, 0, 0xFF);
+            SDL_Surface* glyph = SDL_CreateRGBSurfaceFrom(ftbitmap.buffer, ftbitmap.width, ftbitmap.rows, 8, ftbitmap.pitch, 0, 0, 0, 0xFF);
             SDL_SetPaletteColors(glyph->format->palette, colors, 0, 256);
             SDL_SetSurfaceBlendMode(glyph, SDL_BlendMode::SDL_BLENDMODE_ADD);    
 
@@ -520,6 +530,7 @@ void UI::renderText(std::string sentence, SDL_Rect textBox, int fontSize, bool n
         }
         totalWidth+=fontSize/4;
     }
+
     FT_Done_Face(face);
 }
 
@@ -840,6 +851,7 @@ struct visualData
 };
 
 visualData timeLineBackground;
+UI2 test;
 void timeline(SDL_Rect box){
     if(timeLineBackground.wasUpdated){
         surfaceManipulation::color white = {255,255,255,255};
@@ -863,6 +875,8 @@ void timeline(SDL_Rect box){
         timeLineBackground.wasUpdated = false;
     }
     SDL_RenderCopy(rend, timeLineBackground.texture, NULL, &box);
+    SDL_Rect dk = {500, 500, 100, 100};
+    SDL_RenderCopy(rend, test.renderText("something", dk, 18, false), NULL, &dk);
 }
 
 SDL_Texture* UI2::renderText(std::string sentence, SDL_Rect textBox, int fontsize, bool newLines){
@@ -891,6 +905,7 @@ SDL_Texture* UI2::renderText(std::string sentence, SDL_Rect textBox, int fontsiz
 
     //Create a surface where the sentence will be stored.
     surfaceManipulation manip;
+    SDL_Color col;
     manip.createSurface(textBox.w, textBox.h, 32, SDL_PIXELFORMAT_RGBA32);
 
     //Get all information about the words we want to display.
@@ -907,8 +922,15 @@ SDL_Texture* UI2::renderText(std::string sentence, SDL_Rect textBox, int fontsiz
                 //Take into consideration '-' symbol.
                 FT_Load_Char(FACE, '-', FT_LOAD_RENDER);
                 belowBaseLine = (FACE->glyph->metrics.height - FACE->glyph->metrics.horiBearingY)/55;
-                //render here
+                
                 glyph = SDL_CreateRGBSurfaceFrom(FACE->glyph->bitmap.buffer, FACE->glyph->bitmap.width, FACE->glyph->bitmap.rows, 8, FACE->glyph->bitmap.pitch, 0, 0, 0, 0xFF);
+                for(int x = 0; x < FACE->glyph->bitmap.width; x++){
+                    for(int y = 0; y < FACE->glyph->bitmap.rows; y++){
+                        col = manip.getSurfaceColors({x,y}, glyph, false);
+                        manip.drawToSurface({x+totalWidth, y+totalHeight}, {col.r, col.g, col.b, col.a});
+                    }
+                }
+                SDL_FreeSurface(glyph);
 
                 FT_Load_Char(FACE, symb, FT_LOAD_RENDER);
                 belowBaseLine = (FACE->glyph->metrics.height - FACE->glyph->metrics.horiBearingY)/55;
@@ -916,7 +938,15 @@ SDL_Texture* UI2::renderText(std::string sentence, SDL_Rect textBox, int fontsiz
                 totalHeight += 1;
                 totalWidth = 1;
             }
-           // render here
+            glyph = SDL_CreateRGBSurfaceFrom(FACE->glyph->bitmap.buffer, FACE->glyph->bitmap.width, FACE->glyph->bitmap.rows, 8, FACE->glyph->bitmap.pitch, 0, 0, 0, 0xFF);
+            for(int x = 0; x < FACE->glyph->bitmap.width; x++){
+                for(int y = FACE->glyph->bitmap.rows; y < FACE->glyph->bitmap.rows; y--){
+                    col = manip.getSurfaceColors({x,y}, glyph, false);
+                    //cia aukstyn kojom jie!
+                    manip.drawToSurface({x+totalWidth, y+totalHeight}, {col.r, col.g, col.b, col.a});
+                }
+            }
+            SDL_FreeSurface(glyph);
 
             //Update some info.
             totalWidth+=FACE->glyph->metrics.width;
@@ -924,7 +954,8 @@ SDL_Texture* UI2::renderText(std::string sentence, SDL_Rect textBox, int fontsiz
         }
         totalWidth += fontsize/4;
     }
-    return nullptr;
+    renderedTexts.push_back({manip.createTextureAndDeleteSurface(rend), sentence, 0, textBox});
+    return renderedTexts[renderedTexts.size()-1].texture;
 }
 
 bool checkIfRectsEqual(SDL_Rect rect1, SDL_Rect rect2){
@@ -949,13 +980,15 @@ FT_FaceRec_* UI2::useFont(std::string path, int fontSize){
     
     //Load a font of specific size.
     loadedFaces.push_back({path, fontSize});
-    int i = loadedFaces.size();
+    int i = loadedFaces.size()-1;
 
     FT_Open_Args args;
     args.flags = FT_OPEN_PATHNAME;
     args.pathname = path.data();
 
+    FT_Init_FreeType(&loadedFaces[i].ft);
     if(FT_Open_Face(loadedFaces[i].ft, &args, 0, &loadedFaces[i].face)) std::cout << "Failed to load font ('" << path << "') of size " << fontSize << ". Tried index: " << i <<"\n";
+    
     loadedFaces[i].face->glyph->format = FT_GLYPH_FORMAT_BITMAP;
     FT_Set_Pixel_Sizes(loadedFaces[i].face, fontSize, fontSize);
 
