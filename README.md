@@ -53,3 +53,4 @@ Viskas, galite rasti ir atidaryti **Petto.exe** failą arba atidaryti per termin
 4) Galite pašalinti `.build`, `.dist` ir `.onefile-build` aplankus.
 
 Viskas, galite rasti ir atidaryti **pitonoFailoPavadinimas.exe** arba įrašyti `./pitonoFailoPavadinimas` (pavadinimui pakeisti kompiliavimo metu galite naudoti `--product-name` flag'ą)
+https://youtu.be/DloR0BOGNU0?si=gNk1r6HtddhycD1M

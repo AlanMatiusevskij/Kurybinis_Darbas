@@ -107,9 +107,16 @@ public:
      * Gets RGBA values from a specified surface's given pixel.
     */
     SDL_Color getSurfaceColors(pixel coords, SDL_Surface *surface, bool freeSurface);
+    /**
+     * Blits surfaces using `SDL_BlitSurface()`.
+     * @param areaTO the area of the Currently Working Surface `(CWS)` to draw to. (Width and Height are ignored).
+     * @param from the surface from which pixels will be `blitted` to the CWS.
+     * @param areaFROM the area of the `from` surface to copy. If all values are `{-1,-1,-1,-1}`, the whole surface is used.
+    */
+    void blitSurface(SDL_Rect areaTO, SDL_Surface* from, SDL_Rect areaFROM);
 
 private:
-    SDL_Surface* surface;
+    SDL_Surface* surface = nullptr;
     Uint8 *data;
 };
 
@@ -135,6 +142,20 @@ SDL_Color surfaceManipulation::getSurfaceColors(pixel coords, SDL_Surface *surfa
     SDL_GetRGBA(values, surface->format, (Uint8*)(&red), (Uint8*)(&green), (Uint8*)(&blue), (Uint8*)(&alfa));
     if(freeSurface) SDL_FreeSurface(surface);
     return {red, green, blue, alfa};
+}
+void surfaceManipulation::blitSurface(SDL_Rect areaTO, SDL_Surface* from, SDL_Rect areaFROM){
+    if(surface == nullptr){
+        std::cout << "surfaceManipulation class: SURFACE WAS NOT CREATED!\n";
+        return;
+    }
+    SDL_UnlockSurface(surface);
+    if(areaFROM.x == -1 && areaFROM.y == -1 && areaFROM.w == -1 && areaFROM.h == -1){
+        //SDL_BlitSurface(surface, &areaTO, from, NULL);
+        SDL_BlitSurface(from, NULL, surface, &areaTO);
+    }
+    else SDL_BlitSurface(from, &areaFROM, surface, &areaTO);
+    //SDL_BlitSurface(surface, &areaTO, from, &areaTO);
+    SDL_LockSurface(surface);
 }
 
 class UI2{
@@ -875,6 +896,7 @@ void timeline(SDL_Rect box){
         timeLineBackground.wasUpdated = false;
     }
     SDL_RenderCopy(rend, timeLineBackground.texture, NULL, &box);
+    
     SDL_Rect dk = {500, 500, 100, 100};
     SDL_RenderCopy(rend, test.renderText("something", dk, 18, false), NULL, &dk);
 }
@@ -882,14 +904,18 @@ void timeline(SDL_Rect box){
 SDL_Surface* surfConvertion(SDL_Surface* _8bit){
     SDL_SetPaletteColors(_8bit->format->palette, colors, 0, 256);
     SDL_SetSurfaceBlendMode(_8bit, SDL_BlendMode::SDL_BLENDMODE_ADD); 
-
     SDL_Surface* _return = SDL_ConvertSurfaceFormat(_8bit, SDL_PIXELFORMAT_RGBA32, 0);
 
     SDL_FreeSurface(_8bit);
     return _return;
 }
 
-SDL_Texture* UI2::renderText(std::string sentence, SDL_Rect textBox, int fontsize, bool newLines){
+struct wordLengthStruct{
+    int wordLength;
+    std::vector<int> symbLength;
+};
+//TODO: ADD \n SUPPORT!
+SDL_Texture* UI2::renderText(std::string sentence, SDL_Rect textBox, int fontsize, bool autoNewLines){
     SDL_Texture* textr = findExistingText(sentence, textBox);
     if(textr != nullptr) return textr;
     SDL_DestroyTexture(textr);
@@ -913,50 +939,75 @@ SDL_Texture* UI2::renderText(std::string sentence, SDL_Rect textBox, int fontsiz
     words.push_back(ind_word);
 
     //Find the total width and height.
+    int cWidth = 1;
+    int cHeight = 1;
+    int wordWidth = 0;
+    int maxWidth = 0;
+    int maxHeight = 0;
+    std::vector<wordLengthStruct> word_length;
 
+    for(std::string word : words){
+        word_length.push_back({});
+        for(char symb : word){
+            FT_Load_Char(FACE, symb, FT_LOAD_BITMAP_METRICS_ONLY);
+            cWidth+=FACE->glyph->bitmap.width;
+            wordWidth+=FACE->glyph->bitmap.width;
+
+            if(autoNewLines && cWidth >= textBox.w){
+                cHeight+=fontsize+1;
+                cWidth-=wordWidth;
+                maxWidth = std::max(maxWidth, cWidth);
+
+                cWidth = wordWidth;
+            }
+        }
+        word_length[word_length.size()-1].wordLength = wordWidth;
+        wordWidth = 0;
+        cWidth+=fontsize/4;
+        maxWidth = std::max(maxWidth, cWidth);
+    }
+    maxHeight = cHeight + fontsize;
     //Create a surface where the sentence will be stored.
     surfaceManipulation manip;
-    manip.createSurface(textBox.w, textBox.h, 32, SDL_PIXELFORMAT_RGBA32);
+    manip.createSurface(maxWidth, maxHeight, 32, SDL_PIXELFORMAT_RGBA32);
 
-    //Get all information about the words we want to display.
-    int totalWidth = 1;
+    //Load each glyph surface and merge them into a single surface.
+    int totalGlyphWidth = 1, totalWordWidth = 1;
     int totalHeight = 1;
-    int belowBaseLine = 0;
-    for(std::string word : words){
-        for(char symb : word){
+
+    int belowBaseLine{};
+    //word_length<int>
+    for(int i = 0; i < words.size(); i++){
+        if(autoNewLines && i != 0 && totalWordWidth+word_length[i].wordLength >= textBox.w){
+            cHeight+=fontsize+1;
+            totalWordWidth = 1;
+            totalGlyphWidth = 1;
+        }
+        for(char symb : words[i]){
             FT_Load_Char(FACE, symb, FT_LOAD_RENDER);
             belowBaseLine = (FACE->glyph->metrics.height - FACE->glyph->metrics.horiBearingY)/55;
             SDL_Surface *glyph;
 
-            if(newLines && totalWidth + FACE->glyph->metrics.width >=textBox.w-1){
-                //Take into consideration '-' symbol.
-                FT_Load_Char(FACE, '-', FT_LOAD_RENDER);
-                belowBaseLine = (FACE->glyph->metrics.height - FACE->glyph->metrics.horiBearingY)/55;
-
-                //!*!
-                glyph = surfConvertion(SDL_CreateRGBSurfaceFrom(FACE->glyph->bitmap.buffer, FACE->glyph->bitmap.width, FACE->glyph->bitmap.rows, 8, FACE->glyph->bitmap.pitch, 0, 0, 0, 0xFF));
-                SDL_FreeSurface(glyph);
-
-
-                FT_Load_Char(FACE, symb, FT_LOAD_RENDER);
-                belowBaseLine = (FACE->glyph->metrics.height - FACE->glyph->metrics.horiBearingY)/55;
-
-                totalHeight += 1;
-                totalWidth = 1;
+            if(autoNewLines && totalGlyphWidth >= textBox.w){
+                cHeight+=fontsize+1;
+                totalGlyphWidth = 1;
+                totalWordWidth = 1;
             }
             
-            //!*!
             glyph = surfConvertion(SDL_CreateRGBSurfaceFrom(FACE->glyph->bitmap.buffer, FACE->glyph->bitmap.width, FACE->glyph->bitmap.rows, 8, FACE->glyph->bitmap.pitch, 0, 0, 0, 0xFF));
+            manip.blitSurface({totalGlyphWidth, totalHeight, 0, 0}, glyph, {-1,-1,-1,-1});
             SDL_FreeSurface(glyph);
 
-
             //Update some info.
-            totalWidth+=FACE->glyph->bitmap.width;
-            textInfo.widthSymEnd.push_back({totalWidth, totalHeight});
-
+            totalGlyphWidth+=FACE->glyph->bitmap.width;
+            totalWordWidth+=FACE->glyph->bitmap.width;
+            textInfo.widthSymEnd.push_back({totalGlyphWidth, totalHeight});
         }
-        totalWidth += fontsize/4;
+        totalWordWidth+=fontsize/4;
+        totalGlyphWidth+=fontsize/4;
     }
+    
+    //Create a texture and store it.
     renderedTexts.push_back({manip.createTextureAndDeleteSurface(rend), sentence, 0, textBox});
     return renderedTexts[renderedTexts.size()-1].texture;
 }
