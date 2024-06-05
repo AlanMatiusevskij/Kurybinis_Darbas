@@ -9,6 +9,7 @@
 #include<vector>
 #include<string>
 #include<cmath>
+#include<chrono>
 #include<bitset>
 #include<filesystem>
 #include<algorithm>
@@ -56,6 +57,8 @@ struct sprite_struct{
 };
 //think of them as layered images
 std::vector<sprite_struct> sprites;
+int _1SecAverageUps(bool _cout);
+int getUPS();
 
 void renderSprites(bool transparencyMask);
 void moveSprites();
@@ -114,6 +117,12 @@ public:
      * @param areaFROM the area of the `from` surface to copy. If all values are `{-1,-1,-1,-1}`, the whole surface is used.
     */
     void blitSurface(SDL_Rect areaTO, SDL_Surface* from, SDL_Rect areaFROM);
+    /**
+     * Blits surfaces using `SDL_BlitSurface()`.
+     * @param areaTO the area of the Currently Working Surface `(CWS)` to draw to. (Width and Height are ignored).
+     * @param from the surface from which pixels will be `blitted` to the CWS.
+    */
+    void blitSurface(SDL_Rect areaTO, SDL_Surface* from);
 
 private:
     SDL_Surface* surface = nullptr;
@@ -122,6 +131,7 @@ private:
 
 void surfaceManipulation::createSurface(int width, int height, int depth, SDL_PixelFormatEnum format){
     surface = SDL_CreateRGBSurfaceWithFormat(0, width, height, depth, format);
+    SDL_SetSurfaceBlendMode(surface, SDL_BlendMode::SDL_BLENDMODE_ADD);    
     SDL_LockSurface(surface);
 }
 void surfaceManipulation::drawToSurface(pixel coords, color RGBA){
@@ -143,18 +153,22 @@ SDL_Color surfaceManipulation::getSurfaceColors(pixel coords, SDL_Surface *surfa
     if(freeSurface) SDL_FreeSurface(surface);
     return {red, green, blue, alfa};
 }
+void surfaceManipulation::blitSurface(SDL_Rect areaTO, SDL_Surface* from){
+    if(surface == nullptr){
+        std::cout << "surfaceManipulation class: SURFACE WAS NOT CREATED!\n";
+        return;
+    }
+    SDL_UnlockSurface(surface);
+    SDL_BlitSurface(from, NULL, surface, &areaTO);
+    SDL_LockSurface(surface);
+}
 void surfaceManipulation::blitSurface(SDL_Rect areaTO, SDL_Surface* from, SDL_Rect areaFROM){
     if(surface == nullptr){
         std::cout << "surfaceManipulation class: SURFACE WAS NOT CREATED!\n";
         return;
     }
     SDL_UnlockSurface(surface);
-    if(areaFROM.x == -1 && areaFROM.y == -1 && areaFROM.w == -1 && areaFROM.h == -1){
-        //SDL_BlitSurface(surface, &areaTO, from, NULL);
-        SDL_BlitSurface(from, NULL, surface, &areaTO);
-    }
-    else SDL_BlitSurface(from, &areaFROM, surface, &areaTO);
-    //SDL_BlitSurface(surface, &areaTO, from, &areaTO);
+    SDL_BlitSurface(from, &areaFROM, surface, &areaTO);
     SDL_LockSurface(surface);
 }
 
@@ -170,11 +184,9 @@ public:
 
     //Last renderText() information.
     struct{
-        //Whole texture:
-        int w, h;
+        SDL_Rect dimensions;
         int fontSize;
-        //total width at the end of each symbol.
-        std::vector<SDL_Point> widthSymEnd; 
+        //std::vector<SDL_Point> widthSymEnd; 
     }textInfo;
 
     struct loadedFaces_struct{
@@ -186,11 +198,22 @@ public:
     std::vector<loadedFaces_struct> loadedFaces;
 
     //UI
-    SDL_Texture* renderText(std::string sentence, SDL_Rect textBox, int fontsize, bool newLines);
+    SDL_Texture* createTextTexture(std::string sentence, SDL_Rect textBox, int fontsize, bool newLines);
+    //button
+    //slider
+    //etc
+
     FT_FaceRec_* useFont(std::string path, int fontSize);
+
+    //Display
+    //USE INTERNAL FUNCTION!!!
+    void renderText(SDL_Renderer* renderer, SDL_Texture *texture, SDL_Rect textureArea);
+    void renderText(SDL_Renderer* renderer, SDL_Texture *texture);
 
     static void updateLife();
     static SDL_Texture* findExistingText(std::string &sentence, SDL_Rect &textBox);
+private:
+    SDL_Rect *destination;
 };
 std::vector<UI2::renderedTexts_struct> UI2::renderedTexts{};
 
@@ -250,7 +273,7 @@ int main(int argc, char *argv[]){
 
     wind = SDL_CreateWindow("animator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, 0);
     rend = SDL_CreateRenderer(wind, -1, 0);
-    SDL_SetRenderDrawBlendMode(rend, SDL_BlendMode::SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawBlendMode(rend, SDL_BlendMode::SDL_BLENDMODE_ADD);
 
     for(int i = 0; i < 256; i++)
         colors[i].r = colors[i].g = colors[i].b = colors[i].a = i;
@@ -272,6 +295,7 @@ int main(int argc, char *argv[]){
         timeline({10, HEIGHT-100, WIDTH-WIDTH/5-10, 70});
         
         SDL_RenderPresent(rend);
+        _1SecAverageUps(true);
         SDL_Delay(1000/float(UPS));
     }
 
@@ -896,9 +920,8 @@ void timeline(SDL_Rect box){
         timeLineBackground.wasUpdated = false;
     }
     SDL_RenderCopy(rend, timeLineBackground.texture, NULL, &box);
+    test.renderText(rend, test.createTextTexture("hauhwdh ad hawghy", {500, 200, 100, 100}, 18, false));
     
-    SDL_Rect dk = {500, 500, 100, 100};
-    SDL_RenderCopy(rend, test.renderText("something", dk, 18, false), NULL, &dk);
 }
 
 SDL_Surface* surfConvertion(SDL_Surface* _8bit){
@@ -914,14 +937,12 @@ struct wordLengthStruct{
     int wordLength;
     std::vector<int> symbLength;
 };
-//TODO: ADD \n SUPPORT!
-SDL_Texture* UI2::renderText(std::string sentence, SDL_Rect textBox, int fontsize, bool autoNewLines){
+//TODO: ADD \n SUPPORT! ; ADD TO "renderedTexts", 
+SDL_Texture* UI2::createTextTexture(std::string sentence, SDL_Rect textBox, int fontsize, bool autoNewLines){
     SDL_Texture* textr = findExistingText(sentence, textBox);
     if(textr != nullptr) return textr;
     SDL_DestroyTexture(textr);
 
-    //needed variables
-    textInfo.widthSymEnd.clear();
     std::vector<std::string> words;
     std::string ind_word{""};
 
@@ -966,17 +987,20 @@ SDL_Texture* UI2::renderText(std::string sentence, SDL_Rect textBox, int fontsiz
         cWidth+=fontsize/4;
         maxWidth = std::max(maxWidth, cWidth);
     }
-    maxHeight = cHeight + fontsize;
+    maxHeight = cHeight+fontsize+4;
+
     //Create a surface where the sentence will be stored.
     surfaceManipulation manip;
     manip.createSurface(maxWidth, maxHeight, 32, SDL_PIXELFORMAT_RGBA32);
+    textInfo.dimensions = {textBox.x, textBox.y, maxWidth, maxHeight};
+    textInfo.fontSize = fontsize;
 
     //Load each glyph surface and merge them into a single surface.
     int totalGlyphWidth = 1, totalWordWidth = 1;
     int totalHeight = 1;
 
     int belowBaseLine{};
-    //word_length<int>
+
     for(int i = 0; i < words.size(); i++){
         if(autoNewLines && i != 0 && totalWordWidth+word_length[i].wordLength >= textBox.w){
             cHeight+=fontsize+1;
@@ -995,13 +1019,13 @@ SDL_Texture* UI2::renderText(std::string sentence, SDL_Rect textBox, int fontsiz
             }
             
             glyph = surfConvertion(SDL_CreateRGBSurfaceFrom(FACE->glyph->bitmap.buffer, FACE->glyph->bitmap.width, FACE->glyph->bitmap.rows, 8, FACE->glyph->bitmap.pitch, 0, 0, 0, 0xFF));
-            manip.blitSurface({totalGlyphWidth, totalHeight, 0, 0}, glyph, {-1,-1,-1,-1});
+            manip.blitSurface({totalGlyphWidth, totalHeight-glyph->h+fontsize-fontsize/5+belowBaseLine, 0, 0}, glyph);
             SDL_FreeSurface(glyph);
 
             //Update some info.
             totalGlyphWidth+=FACE->glyph->bitmap.width;
             totalWordWidth+=FACE->glyph->bitmap.width;
-            textInfo.widthSymEnd.push_back({totalGlyphWidth, totalHeight});
+            //textInfo.widthSymEnd.push_back({totalGlyphWidth, totalHeight});
         }
         totalWordWidth+=fontsize/4;
         totalGlyphWidth+=fontsize/4;
@@ -1048,3 +1072,46 @@ FT_FaceRec_* UI2::useFont(std::string path, int fontSize){
 
     return loadedFaces[i].face;
 }  
+
+//Returns current UPS;
+int getUPS(){
+    static std::chrono::steady_clock::time_point then;
+    
+    std::chrono::duration<double> timeDif = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-then);
+    then = std::chrono::steady_clock::now();
+
+    return int(1/timeDif.count());
+}
+int _1SecAverageUps(bool _cout){
+    static std::chrono::steady_clock::time_point then;
+    static std::chrono::steady_clock::time_point lastFrame;
+    static std::vector<float> frames;
+    static float sum = 0;
+    static int average=0;
+    static std::chrono::steady_clock::time_point now;
+
+    now = std::chrono::steady_clock::now();
+    frames.push_back(std::chrono::duration<float>(std::chrono::duration_cast<std::chrono::milliseconds>(now - lastFrame)).count());
+
+    if(std::chrono::duration_cast<std::chrono::seconds>(now - then).count() >= 1){
+        sum = 0;
+        for(int i = 0; i < frames.size(); i++)
+            sum += frames[i];
+        sum/=frames.size();
+        frames.clear(); 
+        average = int(1/sum);
+        then = now;
+        if(_cout) std::cout << "UPS: " << average << "\n";
+    }
+    lastFrame = now;
+    return average;
+}
+
+void UI2::renderText(SDL_Renderer* renderer, SDL_Texture *texture, SDL_Rect textureArea){
+    destination = &textInfo.dimensions;
+    SDL_RenderCopy(renderer, texture, &textureArea, destination);
+}
+void UI2::renderText(SDL_Renderer* renderer, SDL_Texture *texture){
+    destination = &textInfo.dimensions;
+    SDL_RenderCopy(renderer, texture, NULL, destination);
+}
