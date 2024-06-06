@@ -217,6 +217,15 @@ private:
 };
 std::vector<UI2::renderedTexts_struct> UI2::renderedTexts{};
 
+void UI2::renderText(SDL_Renderer* renderer, SDL_Texture *texture, SDL_Rect textureArea){
+    destination = &textInfo.dimensions;
+    SDL_RenderCopy(renderer, texture, &textureArea, destination);
+}
+void UI2::renderText(SDL_Renderer* renderer, SDL_Texture *texture){
+    destination = &textInfo.dimensions;
+    SDL_RenderCopy(renderer, texture, NULL, destination);
+}
+
 class UI{
 public:
     //UI
@@ -273,7 +282,7 @@ int main(int argc, char *argv[]){
 
     wind = SDL_CreateWindow("animator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, 0);
     rend = SDL_CreateRenderer(wind, -1, 0);
-    SDL_SetRenderDrawBlendMode(rend, SDL_BlendMode::SDL_BLENDMODE_ADD);
+    SDL_SetRenderDrawBlendMode(rend, SDL_BlendMode::SDL_BLENDMODE_BLEND);
 
     for(int i = 0; i < 256; i++)
         colors[i].r = colors[i].g = colors[i].b = colors[i].a = i;
@@ -508,11 +517,11 @@ void UI::scrollBox(GUItypes type, SDL_Rect box, std::vector<std::string> &entrie
 void loadFont(int fontSize){
     FT_Open_Args args;
     args.flags = FT_OPEN_PATHNAME;
-    char fontpath[]= "./assets/fonts/OpenSans-Regular.ttf";
+    char fontpath[]= "./assets/fonts/Raleway-SemiBold.ttf";
     args.pathname = fontpath;
     if(FT_Open_Face(ft, &args, 0, &face)) std::cout << "Failed to load fonts!\n";
     face->glyph->format = FT_GLYPH_FORMAT_BITMAP;
-    FT_Set_Pixel_Sizes(face, fontSize, fontSize);
+    FT_Set_Pixel_Sizes(face, fontSize, 0);
 }
 
 void UI::renderText(std::string sentence, SDL_Rect textBox, int fontSize, bool newLines){
@@ -920,7 +929,7 @@ void timeline(SDL_Rect box){
         timeLineBackground.wasUpdated = false;
     }
     SDL_RenderCopy(rend, timeLineBackground.texture, NULL, &box);
-    test.renderText(rend, test.createTextTexture("hauhwdh ad hawghy", {500, 200, 100, 100}, 18, false));
+    test.renderText(rend, test.createTextTexture("hauhwdh ad ha wghy ./testahi ZODZIUTOKSCIA\n.\n.\nDALYKAS wiudhiuawhdiuahiwd", {500, 200, 100, 100}, 20, false));
     
 }
 
@@ -937,7 +946,7 @@ struct wordLengthStruct{
     int wordLength;
     std::vector<int> symbLength;
 };
-//TODO: ADD \n SUPPORT! ; ADD TO "renderedTexts", 
+
 SDL_Texture* UI2::createTextTexture(std::string sentence, SDL_Rect textBox, int fontsize, bool autoNewLines){
     SDL_Texture* textr = findExistingText(sentence, textBox);
     if(textr != nullptr) return textr;
@@ -946,7 +955,7 @@ SDL_Texture* UI2::createTextTexture(std::string sentence, SDL_Rect textBox, int 
     std::vector<std::string> words;
     std::string ind_word{""};
 
-    FT_FaceRec_* FACE = useFont("./assets/fonts/OpenSans-Regular.ttf", fontsize);
+    FT_FaceRec_* FACE = useFont("./assets/fonts/Raleway-SemiBold.ttf", fontsize);
 
     //Save each word and whitespaces in a vector
     for(char symb : sentence){
@@ -974,7 +983,7 @@ SDL_Texture* UI2::createTextTexture(std::string sentence, SDL_Rect textBox, int 
             cWidth+=FACE->glyph->bitmap.width;
             wordWidth+=FACE->glyph->bitmap.width;
 
-            if(autoNewLines && cWidth >= textBox.w){
+            if(autoNewLines && cWidth >= textBox.w || symb == '\n'){
                 cHeight+=fontsize+1;
                 cWidth-=wordWidth;
                 maxWidth = std::max(maxWidth, cWidth);
@@ -1003,7 +1012,7 @@ SDL_Texture* UI2::createTextTexture(std::string sentence, SDL_Rect textBox, int 
 
     for(int i = 0; i < words.size(); i++){
         if(autoNewLines && i != 0 && totalWordWidth+word_length[i].wordLength >= textBox.w){
-            cHeight+=fontsize+1;
+            totalHeight+=fontsize+1;
             totalWordWidth = 1;
             totalGlyphWidth = 1;
         }
@@ -1012,8 +1021,8 @@ SDL_Texture* UI2::createTextTexture(std::string sentence, SDL_Rect textBox, int 
             belowBaseLine = (FACE->glyph->metrics.height - FACE->glyph->metrics.horiBearingY)/55;
             SDL_Surface *glyph;
 
-            if(autoNewLines && totalGlyphWidth >= textBox.w){
-                cHeight+=fontsize+1;
+            if(autoNewLines && totalGlyphWidth >= textBox.w || symb == '\n'){
+                totalHeight+=fontsize+1;
                 totalGlyphWidth = 1;
                 totalWordWidth = 1;
             }
@@ -1084,34 +1093,15 @@ int getUPS(){
 }
 int _1SecAverageUps(bool _cout){
     static std::chrono::steady_clock::time_point then;
-    static std::chrono::steady_clock::time_point lastFrame;
-    static std::vector<float> frames;
-    static float sum = 0;
-    static int average=0;
-    static std::chrono::steady_clock::time_point now;
+    static int updates = 0;
+    static int lastValue = 0;
 
-    now = std::chrono::steady_clock::now();
-    frames.push_back(std::chrono::duration<float>(std::chrono::duration_cast<std::chrono::milliseconds>(now - lastFrame)).count());
-
-    if(std::chrono::duration_cast<std::chrono::seconds>(now - then).count() >= 1){
-        sum = 0;
-        for(int i = 0; i < frames.size(); i++)
-            sum += frames[i];
-        sum/=frames.size();
-        frames.clear(); 
-        average = int(1/sum);
-        then = now;
-        if(_cout) std::cout << "UPS: " << average << "\n";
+    if(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now()-then).count() >= 1){
+        lastValue = updates;
+        if(_cout) std::cout << "UPS: " << lastValue << "\n";
+        then = std::chrono::steady_clock::now();
+        updates = 0;
     }
-    lastFrame = now;
-    return average;
-}
-
-void UI2::renderText(SDL_Renderer* renderer, SDL_Texture *texture, SDL_Rect textureArea){
-    destination = &textInfo.dimensions;
-    SDL_RenderCopy(renderer, texture, &textureArea, destination);
-}
-void UI2::renderText(SDL_Renderer* renderer, SDL_Texture *texture){
-    destination = &textInfo.dimensions;
-    SDL_RenderCopy(renderer, texture, NULL, destination);
+    updates++;
+    return lastValue;
 }
