@@ -31,7 +31,7 @@ Komandas rašyti į terminalą. Kai matote `+`, tai toje vietoje įrašykite, ko
 4) `git pull` atsiųs ir sujungs pakeitimus su naujesne versija tuo metu atidarytos šakos.
 5) `git pull origin + šakos_pavadinimas` atsiųs ir sujungs pakeitimus iš kitos šakos. `origin`, tai repository nuoroda.
 6) `git add + pridėto_failo_pavadinimas` pridės failą, kurį .git sistema visada atnaujins ir išsaugos.
-7) `git commit -a -m " + labai_trumpas_pakeitimo_aprašymas "` paruoš atnaujintus failus sujungimui ir išsaugojimui.
+7) `git commit -am " + labai_trumpas_pakeitimo_aprašymas "` paruoš atnaujintus failus sujungimui ir išsaugojimui.
 8) `git push` paruoštus atnaujinimus ir pakeitmus sujungs ir išsaugos repository'je.
 10) `git config user.name " + slapyvardis/vardas "`, `git config user.email " + elPaštas "` nustatys, kieno vardu ir el. paštu daromi pakeitimai.
 11) `git config (--global) --unset user.email`, `git config (--global) --unset user.name` panaikins įvestą paštą ir slapyvardį.
